@@ -72,5 +72,3 @@ Two GitHub Actions wrap the same CLI:
 | `packages/gate` | The PR instrumentation gate: scanner, lock file, regression diff |
 | `packages/cli` | The `proof` command |
 | `crosswalk/` | The published crosswalk data (frameworks, equivalences, JSON Schema) |
-
-Design decisions with teeth are recorded in `docs/decisions/`.
