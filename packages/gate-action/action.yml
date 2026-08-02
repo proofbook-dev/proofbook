@@ -1,0 +1,44 @@
+name: "Proofbook Gate"
+description: >
+  The pull-request instrumentation gate. Fails only when a change
+  removes the LAST code site emitting an event type that backs an
+  evidenced control, and the failure names the control and the removed
+  file:line. Partial reduction never fails. Runs the proofbook CLI;
+  anything this Action does, `proof gate` does locally.
+branding:
+  icon: "shield"
+  color: "orange"
+
+inputs:
+  baseline:
+    description: "Git ref whose .proofbook/instrumentation.lock is the baseline"
+    default: "origin/main"
+    required: false
+  fail-on:
+    description: "What to fail on. v1 supports exactly: control-regression"
+    default: "control-regression"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Refuse unknown fail-on values
+      shell: bash
+      run: |
+        if [ "${{ inputs.fail-on }}" != "control-regression" ]; then
+          echo "fail-on: '${{ inputs.fail-on }}' is not supported; v1 fails only on control-regression." >&2
+          echo "This is deliberate: a noisier gate gets skipped, and a skipped gate protects nothing." >&2
+          exit 1
+        fi
+
+    - name: Fetch the baseline ref
+      shell: bash
+      run: |
+        ref="${{ inputs.baseline }}"
+        case "$ref" in
+          */*) git fetch --depth=1 "${ref%%/*}" "${ref#*/}" || true ;;
+        esac
+
+    - name: Gate
+      shell: bash
+      run: npx proofbook gate --baseline "${{ inputs.baseline }}"

@@ -1,0 +1,333 @@
+# Proofbook Crosswalk · EU AI Act (Regulation (EU) 2024/1689)
+# Articles 12 (record-keeping) and 50 (transparency obligations).
+#
+# requirement_summary fields are Proofbook's own paraphrases, never the
+# regulation text. Every assertion declares its source class: observed
+# at runtime, verified in configuration, or declared by a named owner.
+# A runtime check SUPPORTS an article; nothing about a span satisfies a
+# legal obligation, and this file never claims otherwise.
+
+framework: eu-ai-act
+version: "2024/1689"
+crosswalk_version: "0.1.0"
+
+controls:
+  - id: eu-ai-act-a12-record
+    article: "Art. 12(1)"
+    title: Automatic event recording across the operational lifetime
+    requirement_summary: >
+      The system automatically records events while it operates, at a
+      level that supports traceability of its functioning.
+    assertions:
+      - id: a12-record-lifecycle
+        description: Every agent run in the period emits a complete lifecycle record.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "coverage(AgentRun, [run_id, agent_id, started_at, ended_at]) >= 0.99"
+        partial_expression: "coverage(AgentRun, [run_id, agent_id, started_at, ended_at]) >= 0.80"
+        evidence:
+          selector: AgentRun
+          sample: 20
+          summarise: [count, date_range, distinct_agents]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: a12-record-model-identity
+        description: Every model call records which model and which provider processed it.
+        source_class: observed
+        capability: model_identity
+        expression: "coverage(ModelCall, [provider, model]) >= 0.99"
+        partial_expression: "coverage(ModelCall, [provider, model]) >= 0.80"
+        evidence:
+          selector: ModelCall
+          sample: 20
+          summarise: [count, distinct_models]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a12-period
+    article: "Art. 12(2)"
+    title: Period of each use is recorded
+    requirement_summary: >
+      Recording covers the start and end of each period of use, so any
+      individual use can be located in time.
+    assertions:
+      - id: a12-period-bounds
+        description: Agent runs carry both a start and an end timestamp.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "coverage(AgentRun, [started_at, ended_at]) >= 0.99"
+        partial_expression: "coverage(AgentRun, [started_at, ended_at]) >= 0.80"
+        evidence:
+          selector: AgentRun
+          sample: 20
+          summarise: [count, date_range]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a12-input
+    article: "Art. 12(2)"
+    title: Input and output data are traceable by digest
+    requirement_summary: >
+      The data going into and coming out of the system during use can be
+      identified and integrity-checked, without retaining the content
+      itself in the evidence record.
+    assertions:
+      - id: a12-input-digests
+        description: Model calls carry content digests for prompt and completion.
+        source_class: observed
+        capability: content_integrity
+        expression: "coverage(ModelCall, [content_ref.prompt, content_ref.completion]) >= 0.99"
+        partial_expression: "coverage(ModelCall, [content_ref.prompt, content_ref.completion]) >= 0.80"
+        evidence:
+          selector: ModelCall
+          sample: 20
+          summarise: [count]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a12-attribution
+    article: "Art. 12(1)"
+    title: Recorded events are attributable to an agent identity
+    requirement_summary: >
+      Recorded activity can be attributed to the specific agent that
+      performed it; activity from unidentified agents undermines the
+      record's traceability.
+    assertions:
+      - id: a12-attribution-linked
+        description: Model calls belong to runs with an identified agent.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "ratio(ModelCall[linked(AgentRun)], ModelCall) >= 0.99"
+        partial_expression: "ratio(ModelCall[linked(AgentRun)], ModelCall) >= 0.80"
+        evidence:
+          selector: ModelCall
+          sample: 20
+          summarise: [count, distinct_agents]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          # Observed activity from agents that identify themselves nowhere
+          # actively contradicts attributability, it is not merely absent.
+          fail: contradicted
+          no_data: unevaluable
+
+  - id: eu-ai-act-a12-anomalies
+    article: "Art. 12(1)"
+    title: Operational anomalies are recorded with their nature and timing
+    requirement_summary: >
+      When operation fails or degrades, the failure is itself recorded in
+      a form that supports later identification of risk situations.
+    assertions:
+      - id: a12-anomalies-typed
+        description: Recorded errors carry an error type and a timestamp.
+        source_class: observed
+        capability: span_coverage
+        expression: "coverage(Error, [error_type, at]) >= 0.99"
+        evidence:
+          selector: Error
+          sample: 20
+          summarise: [count, date_range]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          # Zero recorded errors may mean a clean period or dead error
+          # instrumentation; the telemetry alone cannot distinguish them.
+          no_data: unevaluable
+
+  - id: eu-ai-act-a12-tools
+    article: "Art. 12(1)"
+    title: External actions taken by the system are recorded
+    requirement_summary: >
+      Actions the system takes against external tools and services are
+      recorded with the target's identity and the outcome.
+    assertions:
+      - id: a12-tools-identified
+        description: Tool invocations record the tool identity and outcome.
+        source_class: observed
+        capability: tool_invocation
+        expression: "coverage(ToolCall, [tool_name, outcome]) >= 0.99"
+        partial_expression: "coverage(ToolCall, [tool_name, outcome]) >= 0.80"
+        evidence:
+          selector: ToolCall
+          sample: 20
+          summarise: [count, distinct_tools]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a13-instructions
+    article: "Art. 13(1)"
+    title: Deployers receive instructions for use
+    requirement_summary: >
+      The system is accompanied by instructions that let a deployer
+      operate it appropriately and interpret its output. A document a
+      human maintains; telemetry cannot observe it.
+    assertions:
+      - id: a13-instructions-declared
+        description: A named owner attests current instructions for use exist, with scope and date.
+        source_class: declared
+        expression: "declared(instructions_for_use)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a13-limitations
+    article: "Art. 13(3)"
+    title: Capabilities and limitations are communicated
+    requirement_summary: >
+      Deployers are told what the system can and cannot do, including
+      known failure modes and the circumstances that degrade performance.
+    assertions:
+      - id: a13-limitations-declared
+        description: A named owner attests capability and limitation documentation, with scope and date.
+        source_class: declared
+        expression: "declared(capabilities_and_limitations)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a14-checkpoints
+    article: "Art. 14(4)"
+    title: Human oversight is exercised and recorded in operation
+    requirement_summary: >
+      Oversight is not only designed but used: human checkpoint events
+      (approval, review, override, abort) occur during real operation
+      and are recorded with their type and decision.
+    # When tool actions carry a declared action class (proofbook.yml),
+    # a sequence() assertion lands here: approval precedes every
+    # irreversible action. Until then, gating order is not asserted.
+    assertions:
+      - id: a14-oversight-exercised
+        description: Human checkpoint events occur in production operation.
+        source_class: observed
+        capability: human_oversight
+        expression: "exists(HumanCheckpoint)"
+        evidence:
+          selector: HumanCheckpoint
+          sample: 20
+          summarise: [count, date_range]
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: a14-oversight-complete
+        description: Recorded checkpoints carry their type and the decision taken.
+        source_class: observed
+        capability: human_oversight
+        expression: "coverage(HumanCheckpoint, [type, decision]) >= 0.99"
+        partial_expression: "coverage(HumanCheckpoint, [type, decision]) >= 0.80"
+        evidence:
+          selector: HumanCheckpoint
+          sample: 20
+          summarise: [count]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a14-actors
+    article: "Art. 14(4)"
+    title: Oversight decisions are attributable to a person
+    requirement_summary: >
+      Each recorded human decision carries a reference to the person who
+      took it, as an identity digest rather than the identity itself.
+    assertions:
+      - id: a14-actors-attributable
+        description: Human checkpoints carry an actor reference.
+        source_class: observed
+        capability: human_oversight
+        expression: "coverage(HumanCheckpoint, [actor_ref]) >= 0.99"
+        partial_expression: "coverage(HumanCheckpoint, [actor_ref]) >= 0.80"
+        evidence:
+          selector: HumanCheckpoint
+          sample: 20
+          summarise: [count]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a15-robustness
+    article: "Art. 15"
+    title: Failures are visible in operation, and robustness is tested
+    requirement_summary: >
+      Resilience has two halves: failures during operation are captured
+      in an inspectable form, and accuracy and robustness are tested
+      before and during deployment. The first is observable; the second
+      is a testing practice a named owner attests.
+    assertions:
+      - id: a15-failures-typed
+        description: Operational failures are recorded with their type and timing.
+        source_class: observed
+        capability: span_coverage
+        expression: "coverage(Error, [error_type, at]) >= 0.99"
+        evidence:
+          selector: Error
+          sample: 20
+          summarise: [count, date_range]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: a15-testing-declared
+        description: A named owner attests accuracy and robustness testing practice, with scope and date.
+        source_class: declared
+        expression: "declared(accuracy_robustness_testing)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a50-disclosure
+    article: "Art. 50(1)"
+    title: Persons are informed they are interacting with an AI system
+    requirement_summary: >
+      Natural persons interacting with the system are told so, unless it
+      is obvious from context. Runtime telemetry cannot observe what a
+      person was shown; this is a declaration by a named owner.
+    assertions:
+      - id: a50-disclosure-declared
+        description: A named owner attests the interaction disclosure, with scope and date.
+        source_class: declared
+        expression: "declared(ai_interaction_disclosure)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: eu-ai-act-a50-marking
+    article: "Art. 50(2)"
+    title: Synthetic content is marked in a machine-readable form
+    requirement_summary: >
+      Generated audio, image, video or text output is marked as
+      artificially generated in a machine-readable way. Verifiable from
+      output pipeline configuration, not from traces.
+    assertions:
+      - id: a50-marking-configured
+        description: Output pipeline configuration enables machine-readable content marking.
+        source_class: configured
+        expression: "config(synthetic_content_marking)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable

@@ -1,0 +1,18 @@
+{
+  "name": "@proofbook/provenance",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^2.1.0",
+    "@noble/hashes": "^1.5.0",
+    "@proofbook/seal": "workspace:*"
+  },
+  "devDependencies": {
+    "@proofbook/crosswalk": "workspace:*",
+    "@proofbook/engine": "workspace:*",
+    "@proofbook/normalize": "workspace:*"
+  }
+}

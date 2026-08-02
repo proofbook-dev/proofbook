@@ -1,0 +1,16 @@
+{
+  "name": "@proofbook/engine",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@proofbook/crosswalk": "workspace:*",
+    "@proofbook/schema": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@proofbook/normalize": "workspace:*"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "proofbook",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Evidence layer for agentic AI systems: turn agent traces into verifiable audit evidence",
+  "bin": {
+    "proof": "./bin/proof.js",
+    "proofbook": "./bin/proof.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@proofbook/crosswalk": "workspace:*",
+    "@proofbook/engine": "workspace:*",
+    "@proofbook/gate": "workspace:*",
+    "@proofbook/normalize": "workspace:*",
+    "@proofbook/provenance": "workspace:*",
+    "@proofbook/report": "workspace:*",
+    "@proofbook/schema": "workspace:*",
+    "@proofbook/seal": "workspace:*",
+    "@proofbook/store": "workspace:*"
+  }
+}

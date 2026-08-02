@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../schema"
+    },
+    {
+      "path": "../normalize"
+    },
+    {
+      "path": "../crosswalk"
+    },
+    {
+      "path": "../engine"
+    },
+    {
+      "path": "../report"
+    },
+    {
+      "path": "../seal"
+    },
+    {
+      "path": "../provenance"
+    },
+    {
+      "path": "../store"
+    },
+    {
+      "path": "../gate"
+    }
+  ]
+}

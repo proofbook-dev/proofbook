@@ -1,0 +1,78 @@
+# Generation: the pre-1.27 / OpenLLMetry era.
+#
+# No gen_ai.operation.name. Messages live in flat indexed attributes
+# (gen_ai.prompt.0.content), token counts use the prompt/completion
+# names, and agent/tool structure comes from traceloop.span.kind. Still
+# emitted today by OpenLLMetry-instrumented stacks and older SDK pins,
+# which is exactly why it needs first-class support rather than a shim.
+
+generation: otel-genai-legacy
+precedence: 10
+description: >
+  Legacy flat GenAI attributes: llm.*, indexed gen_ai.prompt.N.*,
+  prompt/completion token names, traceloop.span.kind entity structure.
+
+fingerprint:
+  signals:
+    - { kind: attr_present, key: "llm.request.type", weight: 0.4 }
+    - { kind: attr_prefix, prefix: "gen_ai.prompt.", weight: 0.3 }
+    - { kind: attr_present, key: "traceloop.span.kind", weight: 0.3 }
+    - { kind: attr_present, key: "gen_ai.usage.prompt_tokens", weight: 0.2 }
+
+mappings:
+  - event: ModelCall
+    match:
+      any:
+        - attr_present: ["llm.request.type"]
+        - attr_present: ["gen_ai.prompt.0.content"]
+        - attr_present: ["gen_ai.usage.prompt_tokens"]
+    fields:
+      provider:
+        attr_first: ["gen_ai.system", "llm.vendor"]
+        required: true
+      model:
+        attr_first: ["gen_ai.response.model", "gen_ai.request.model", "llm.model"]
+        required: true
+      "token_usage.input":
+        attr_first: ["gen_ai.usage.prompt_tokens", "llm.usage.prompt_tokens"]
+        expected: true
+      "token_usage.output":
+        attr_first: ["gen_ai.usage.completion_tokens", "llm.usage.completion_tokens"]
+        expected: true
+      "request_params.temperature": { attr: "gen_ai.request.temperature" }
+      "request_params.max_tokens": { attr: "gen_ai.request.max_tokens" }
+      finish_reason: { attr: "gen_ai.completion.0.finish_reason" }
+    content_refs:
+      prompt: { attr_indexed: "gen_ai.prompt.{i}.content" }
+      completion: { attr_indexed: "gen_ai.completion.{i}.content" }
+
+  - event: ToolCall
+    match:
+      attr_in: { "traceloop.span.kind": [tool] }
+    fields:
+      tool_name:
+        attr_first: ["traceloop.entity.name"]
+        from_span_name: "^(.+)\\.tool$"
+        required: true
+    content_refs:
+      arguments: { attr: "traceloop.entity.input" }
+      result: { attr: "traceloop.entity.output" }
+
+  - event: AgentRun
+    match:
+      attr_in: { "traceloop.span.kind": [agent] }
+    fields:
+      agent_id:
+        attr_first: ["traceloop.entity.name"]
+        required: true
+      agent_name: { attr: "traceloop.entity.name" }
+
+  - event: HumanCheckpoint
+    shared: true
+    match:
+      attr_present: ["proofbook.human_checkpoint.type"]
+    fields:
+      type: { attr: "proofbook.human_checkpoint.type", required: true }
+      decision: { attr: "proofbook.human_checkpoint.decision" }
+    content_refs:
+      actor: { attr: "proofbook.human_checkpoint.actor" }

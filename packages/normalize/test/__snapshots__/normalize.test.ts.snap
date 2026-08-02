@@ -1,0 +1,577 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`normalise: legacy generation (OpenLLMetry-era flat attributes) > maps agent, model and tool spans from traceloop/llm attributes (golden) 1`] = `
+{
+  "completeness": {
+    "capabilities": [
+      {
+        "description": "Spans in the batch map onto the internal event model",
+        "id": "span_coverage",
+        "status": "available",
+      },
+      {
+        "description": "Agent runs carry a complete start/end lifecycle record",
+        "id": "agent_lifecycle",
+        "status": "available",
+      },
+      {
+        "description": "Model calls identify the model and the processing provider",
+        "id": "model_identity",
+        "status": "available",
+      },
+      {
+        "description": "Model calls carry input and output token counts",
+        "id": "token_accounting",
+        "status": "available",
+      },
+      {
+        "description": "Tool invocations are recorded with identity and outcome",
+        "id": "tool_invocation",
+        "status": "available",
+      },
+      {
+        "description": "Human checkpoints (approval, review, override) are recorded",
+        "id": "human_oversight",
+        "reason": "no human checkpoint events; emit proofbook.human_checkpoint.* attributes (or the LangGraph/Temporal integrations) or these controls stay unevaluable",
+        "status": "unavailable",
+      },
+      {
+        "description": "Prompt and completion content is digest-referenced",
+        "id": "content_integrity",
+        "status": "available",
+      },
+    ],
+    "field_population": [
+      {
+        "event_type": "AgentRun",
+        "field": "agent_id",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "AgentRun",
+        "field": "ended_at",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "AgentRun",
+        "field": "session_id",
+        "populated": 0,
+        "rate": 0,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "provider",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "model",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "token_usage.input",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "token_usage.output",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "finish_reason",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "content_ref.prompt",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "content_ref.completion",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "tool_name",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "server",
+        "populated": 0,
+        "rate": 0,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "arguments_ref",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "result_ref",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "HumanCheckpoint",
+        "field": "type",
+        "populated": 0,
+        "rate": 0,
+        "total": 0,
+      },
+      {
+        "event_type": "HumanCheckpoint",
+        "field": "decision",
+        "populated": 0,
+        "rate": 0,
+        "total": 0,
+      },
+      {
+        "event_type": "HumanCheckpoint",
+        "field": "actor_ref",
+        "populated": 0,
+        "rate": 0,
+        "total": 0,
+      },
+    ],
+    "mapped_ratio": 1,
+  },
+  "conflicts": [],
+  "counts": {
+    "spans_mapped": 3,
+    "spans_seen": 3,
+    "spans_unmapped": 0,
+  },
+  "detections": [
+    {
+      "confidence": 1,
+      "generation": "otel-genai-legacy",
+      "signals": [
+        "attr_present:llm.request.type",
+        "attr_prefix:gen_ai.prompt.",
+        "attr_present:traceloop.span.kind",
+        "attr_present:gen_ai.usage.prompt_tokens",
+      ],
+    },
+    {
+      "confidence": 0.5,
+      "generation": "otel-genai",
+      "signals": [
+        "attr_present:gen_ai.system",
+        "attr_prefix:gen_ai.",
+      ],
+    },
+  ],
+  "events": {
+    "agent_runs": [
+      {
+        "agent_id": "support-bot",
+        "agent_name": "support-bot",
+        "ended_at": "2026-07-10T10:40:12.000Z",
+        "run_id": "6c4a0e3f1d5b7c92c3d4e5f60718293a",
+        "span_id": "c3d4e5f607180001",
+        "started_at": "2026-07-10T10:40:00.000Z",
+        "trace_id": "6c4a0e3f1d5b7c92c3d4e5f60718293a",
+      },
+    ],
+    "data_access": [],
+    "delegations": [],
+    "errors": [],
+    "human_checkpoints": [],
+    "model_calls": [
+      {
+        "content_ref": {
+          "completion": {
+            "sha256": "c0791b02618683a70472b9715ef6459c5f9fa529c979de52d41ff376989fe3f0",
+          },
+          "prompt": {
+            "sha256": "9a24f93e214be6c156b1a5e4f2c4ca4feeea2eb39508c0f333e0185adf6c61d2",
+          },
+        },
+        "finish_reason": "stop",
+        "latency_ms": 1800,
+        "model": "gpt-4o-2024-08-06",
+        "provider": "openai",
+        "run_id": "6c4a0e3f1d5b7c92c3d4e5f60718293a",
+        "span_id": "c3d4e5f607180002",
+        "started_at": "2026-07-10T10:40:01.000Z",
+        "token_usage": {
+          "input": 742,
+          "output": 128,
+        },
+        "trace_id": "6c4a0e3f1d5b7c92c3d4e5f60718293a",
+      },
+    ],
+    "policy_events": [],
+    "tool_calls": [
+      {
+        "arguments_ref": {
+          "sha256": "75ebc9a316ed0b63aad2a2e5f3ccb808a8b844bbb3ff97469d8a7ddd6763b25a",
+        },
+        "latency_ms": 400,
+        "outcome": "success",
+        "result_ref": {
+          "sha256": "ddd0a2b737739c8ad36ce3a6dda020e835e34604abeb7e568503697ddf8ba7bf",
+        },
+        "run_id": "6c4a0e3f1d5b7c92c3d4e5f60718293a",
+        "span_id": "c3d4e5f607180003",
+        "started_at": "2026-07-10T10:40:03.000Z",
+        "tool_name": "order_lookup",
+        "trace_id": "6c4a0e3f1d5b7c92c3d4e5f60718293a",
+      },
+    ],
+  },
+  "missing_fields": [],
+  "schema_version": "0.1.0",
+  "source": {
+    "files": [
+      "otel-genai-legacy.json",
+    ],
+    "format": "otlp-json",
+  },
+  "unmapped": [],
+}
+`;
+
+exports[`normalise: otel-genai basic fixture > maps a full agent trace to the internal event model (golden) 1`] = `
+{
+  "completeness": {
+    "capabilities": [
+      {
+        "description": "Spans in the batch map onto the internal event model",
+        "id": "span_coverage",
+        "status": "available",
+      },
+      {
+        "description": "Agent runs carry a complete start/end lifecycle record",
+        "id": "agent_lifecycle",
+        "status": "available",
+      },
+      {
+        "description": "Model calls identify the model and the processing provider",
+        "id": "model_identity",
+        "status": "available",
+      },
+      {
+        "description": "Model calls carry input and output token counts",
+        "id": "token_accounting",
+        "status": "available",
+      },
+      {
+        "description": "Tool invocations are recorded with identity and outcome",
+        "id": "tool_invocation",
+        "status": "available",
+      },
+      {
+        "description": "Human checkpoints (approval, review, override) are recorded",
+        "id": "human_oversight",
+        "status": "available",
+      },
+      {
+        "description": "Prompt and completion content is digest-referenced",
+        "id": "content_integrity",
+        "reason": "some model calls are missing content digests (1 of 2)",
+        "status": "degraded",
+      },
+    ],
+    "field_population": [
+      {
+        "event_type": "AgentRun",
+        "field": "agent_id",
+        "populated": 2,
+        "rate": 1,
+        "total": 2,
+      },
+      {
+        "event_type": "AgentRun",
+        "field": "ended_at",
+        "populated": 2,
+        "rate": 1,
+        "total": 2,
+      },
+      {
+        "event_type": "AgentRun",
+        "field": "session_id",
+        "populated": 1,
+        "rate": 0.5,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "provider",
+        "populated": 2,
+        "rate": 1,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "model",
+        "populated": 2,
+        "rate": 1,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "token_usage.input",
+        "populated": 2,
+        "rate": 1,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "token_usage.output",
+        "populated": 2,
+        "rate": 1,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "finish_reason",
+        "populated": 1,
+        "rate": 0.5,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "content_ref.prompt",
+        "populated": 1,
+        "rate": 0.5,
+        "total": 2,
+      },
+      {
+        "event_type": "ModelCall",
+        "field": "content_ref.completion",
+        "populated": 1,
+        "rate": 0.5,
+        "total": 2,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "tool_name",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "server",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "arguments_ref",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "ToolCall",
+        "field": "result_ref",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "HumanCheckpoint",
+        "field": "type",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "HumanCheckpoint",
+        "field": "decision",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+      {
+        "event_type": "HumanCheckpoint",
+        "field": "actor_ref",
+        "populated": 1,
+        "rate": 1,
+        "total": 1,
+      },
+    ],
+    "mapped_ratio": 1,
+  },
+  "conflicts": [],
+  "counts": {
+    "spans_mapped": 6,
+    "spans_seen": 6,
+    "spans_unmapped": 0,
+  },
+  "detections": [
+    {
+      "confidence": 1,
+      "generation": "otel-genai",
+      "signals": [
+        "attr_present:gen_ai.operation.name",
+        "attr_present:gen_ai.system",
+        "attr_prefix:gen_ai.",
+      ],
+    },
+    {
+      "confidence": 0.2,
+      "generation": "otel-genai-latest",
+      "signals": [
+        "attr_present:gen_ai.operation.name",
+      ],
+    },
+  ],
+  "events": {
+    "agent_runs": [
+      {
+        "agent_id": "claims-triage",
+        "agent_name": "Claims Triage",
+        "ended_at": "2026-07-10T09:00:30.000Z",
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "session_id": "sess-8842",
+        "span_id": "a1b2c3d4e5f60001",
+        "started_at": "2026-07-10T09:00:00.000Z",
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+      {
+        "agent_id": "fraud-check",
+        "ended_at": "2026-07-10T09:00:18.000Z",
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "span_id": "a1b2c3d4e5f60005",
+        "started_at": "2026-07-10T09:00:12.000Z",
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+    ],
+    "data_access": [],
+    "delegations": [
+      {
+        "at": "2026-07-10T09:00:12.000Z",
+        "child_agent": "fraud-check",
+        "parent_agent": "claims-triage",
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "span_id": "a1b2c3d4e5f60005",
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+    ],
+    "errors": [
+      {
+        "at": "2026-07-10T09:00:14.000Z",
+        "error_type": "RateLimitError",
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "span_id": "a1b2c3d4e5f60006",
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+    ],
+    "human_checkpoints": [
+      {
+        "actor_ref": {
+          "sha256": "0a60ccb30b868a94ca8128b2a760dcaa631887b2c74966c1308dc84adcb38270",
+        },
+        "at": "2026-07-10T09:00:10.000Z",
+        "decision": "approved",
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "span_id": "a1b2c3d4e5f60004",
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "type": "approval",
+      },
+    ],
+    "model_calls": [
+      {
+        "content_ref": {
+          "completion": {
+            "sha256": "46b99adb4329ab38d9b27e30f6093851d23cd9a2d6d1469b35501e8b5ded7dd4",
+          },
+          "prompt": {
+            "sha256": "76c74be9c2474c15583667fc3b6f2429ae76f02ff3509eeed464b41508960e28",
+          },
+        },
+        "finish_reason": "end_turn",
+        "latency_ms": 2200,
+        "model": "claude-sonnet-4-6",
+        "provider": "anthropic",
+        "request_params": {
+          "max_tokens": 1024,
+          "temperature": 0.2,
+        },
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "span_id": "a1b2c3d4e5f60002",
+        "started_at": "2026-07-10T09:00:01.000Z",
+        "token_usage": {
+          "input": 1211,
+          "output": 246,
+        },
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+      {
+        "latency_ms": 1000,
+        "model": "claude-sonnet-4-6",
+        "provider": "anthropic",
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "span_id": "a1b2c3d4e5f60006",
+        "started_at": "2026-07-10T09:00:13.000Z",
+        "token_usage": {
+          "input": 902,
+          "output": 0,
+        },
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+    ],
+    "policy_events": [],
+    "tool_calls": [
+      {
+        "arguments_ref": {
+          "sha256": "ca2e0f86a7112bc7a48a0c8751a7b510b03ad1d3b1eeef0b6a6721f9d7b3756a",
+        },
+        "latency_ms": 800,
+        "outcome": "success",
+        "result_ref": {
+          "sha256": "4f370661bdedb3fe06d8990f3a842944cc9ed89fb74c02e28d4d99554fff641a",
+        },
+        "run_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+        "server": "policy-db",
+        "span_id": "a1b2c3d4e5f60003",
+        "started_at": "2026-07-10T09:00:04.000Z",
+        "tool_name": "lookup_policy",
+        "trace_id": "4a2f8c1d9b3e5f70a1b2c3d4e5f60718",
+      },
+    ],
+  },
+  "missing_fields": [],
+  "schema_version": "0.1.0",
+  "source": {
+    "files": [
+      "otel-genai-basic.json",
+    ],
+    "format": "otlp-json",
+  },
+  "unmapped": [],
+}
+`;

@@ -1,0 +1,82 @@
+# Generation: OpenTelemetry GenAI semantic conventions, 1.27+ attribute
+# names, with fallbacks for the legacy prompt/completion token names that
+# frameworks still emit. One file per conventions generation; a framework
+# quirk is a change here, not in the interpreter.
+
+generation: otel-genai
+precedence: 20
+description: >
+  OTel GenAI semantic conventions with gen_ai.* attributes. Covers spans
+  emitted by SDK instrumentations following the 1.27+ attribute set, plus
+  the proofbook.* extension attributes for human checkpoints.
+
+fingerprint:
+  signals:
+    - { kind: attr_present, key: "gen_ai.operation.name", weight: 0.5 }
+    - { kind: attr_present, key: "gen_ai.system", weight: 0.3 }
+    - { kind: attr_prefix, prefix: "gen_ai.", weight: 0.2 }
+
+mappings:
+  - event: ModelCall
+    match:
+      attr_in:
+        "gen_ai.operation.name":
+          [chat, completion, text_completion, generate_content, embeddings]
+    fields:
+      provider: { attr: "gen_ai.system", required: true }
+      model:
+        attr_first: ["gen_ai.response.model", "gen_ai.request.model"]
+        required: true
+      "token_usage.input":
+        attr_first: ["gen_ai.usage.input_tokens", "gen_ai.usage.prompt_tokens"]
+        expected: true
+      "token_usage.output":
+        attr_first: ["gen_ai.usage.output_tokens", "gen_ai.usage.completion_tokens"]
+        expected: true
+      finish_reason:
+        attr: "gen_ai.response.finish_reasons"
+        first_element: true
+      "request_params.temperature": { attr: "gen_ai.request.temperature" }
+      "request_params.max_tokens": { attr: "gen_ai.request.max_tokens" }
+    content_refs:
+      prompt: { attr: "gen_ai.prompt" }
+      completion: { attr: "gen_ai.completion" }
+
+  - event: ToolCall
+    match:
+      any:
+        - attr_in: { "gen_ai.operation.name": [execute_tool] }
+        - name_regex: "^execute_tool\\s+"
+    fields:
+      tool_name:
+        attr: "gen_ai.tool.name"
+        from_span_name: "^execute_tool\\s+(.+)$"
+        required: true
+      server: { attr: "mcp.server.name" }
+    content_refs:
+      arguments: { attr: "gen_ai.tool.call.arguments" }
+      result: { attr: "gen_ai.tool.call.result" }
+
+  - event: AgentRun
+    match:
+      attr_in: { "gen_ai.operation.name": [invoke_agent] }
+    fields:
+      agent_id:
+        attr_first: ["gen_ai.agent.id", "gen_ai.agent.name"]
+        required: true
+      agent_name: { attr: "gen_ai.agent.name" }
+      session_id: { attr_first: ["gen_ai.conversation.id", "session.id"] }
+
+  # No OTel convention exists for human oversight. These are the
+  # proofbook.* extension attributes (also emitted by the LangGraph
+  # interrupt and Temporal signal integrations, later stages). Without
+  # them, human-oversight controls are honestly unevaluable.
+  - event: HumanCheckpoint
+    shared: true
+    match:
+      attr_present: ["proofbook.human_checkpoint.type"]
+    fields:
+      type: { attr: "proofbook.human_checkpoint.type", required: true }
+      decision: { attr: "proofbook.human_checkpoint.decision" }
+    content_refs:
+      actor: { attr: "proofbook.human_checkpoint.actor" }

@@ -1,0 +1,19 @@
+{
+  "name": "@proofbook/store",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@proofbook/seal": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "yaml": "^2.6.0",
+    "@proofbook/crosswalk": "workspace:*",
+    "@proofbook/engine": "workspace:*",
+    "@proofbook/normalize": "workspace:*",
+    "@proofbook/provenance": "workspace:*"
+  }
+}

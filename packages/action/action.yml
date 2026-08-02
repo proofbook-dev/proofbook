@@ -1,0 +1,64 @@
+name: "Proofbook Evidence"
+description: >
+  Seal agent telemetry into signed, chained audit evidence. Runs the
+  proofbook CLI; anything this Action does, the CLI does. Zero required
+  inputs: with no `with:` block it discovers traces, seals last month,
+  signs with the workflow's OIDC identity and writes a job summary.
+branding:
+  icon: "check-circle"
+  color: "orange"
+
+inputs:
+  period:
+    description: "Period to seal: YYYY-MM, last-month, this-month"
+    default: "last-month"
+    required: false
+  traces:
+    description: "Trace file or directory (default: auto-discover)"
+    default: ""
+    required: false
+  frameworks:
+    description: "Comma-separated framework filter (default: all)"
+    default: ""
+    required: false
+  sign:
+    description: "local | oidc (needs `permissions: id-token: write`)"
+    default: "oidc"
+    required: false
+  push:
+    description: "Push the sealed bundle to the hosted chain (needs proofbook-token)"
+    default: "false"
+    required: false
+  proofbook-token:
+    description: "Hosted chain token (secrets.PROOFBOOK_TOKEN)"
+    default: ""
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Seal the period
+      shell: bash
+      run: |
+        npx proofbook seal ${{ inputs.traces }} \
+          --period "${{ inputs.period }}" \
+          --sign "${{ inputs.sign }}" \
+          ${{ inputs.frameworks != '' && format('--frameworks {0}', inputs.frameworks) || '' }}
+
+    - name: Chain summary
+      shell: bash
+      run: npx proofbook chain --markdown >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Push to the hosted chain
+      if: ${{ inputs.push == 'true' }}
+      shell: bash
+      env:
+        PROOFBOOK_TOKEN: ${{ inputs.proofbook-token }}
+      run: npx proofbook push
+
+    - name: Upload bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: proofbook-evidence-${{ github.run_id }}
+        path: .proofbook/store/bundles/
+        if-no-files-found: error

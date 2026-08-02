@@ -1,0 +1,59 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "billing-agent" } }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": { "name": "mixed-generation-sdk", "version": "2.0.0" },
+          "spans": [
+            {
+              "traceId": "7d5b1f402e6c8da3d4e5f60718293a4b",
+              "spanId": "d4e5f60718290001",
+              "name": "chat claude-sonnet-4-6",
+              "kind": 3,
+              "startTimeUnixNano": "1783683600000000000",
+              "endTimeUnixNano": "1783683601900000000",
+              "attributes": [
+                { "key": "gen_ai.operation.name", "value": { "stringValue": "chat" } },
+                { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                { "key": "gen_ai.system", "value": { "stringValue": "anthropic" } },
+                { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-4-6" } },
+                { "key": "gen_ai.usage.input_tokens", "value": { "intValue": "310" } },
+                { "key": "gen_ai.usage.output_tokens", "value": { "intValue": "95" } },
+                {
+                  "key": "gen_ai.input.messages",
+                  "value": { "stringValue": "[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"Summarise invoice INV-2201\"}]}]" }
+                },
+                {
+                  "key": "gen_ai.output.messages",
+                  "value": { "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"text\",\"content\":\"Invoice INV-2201: 3 line items, total 412.50 EUR.\"}]}]" }
+                }
+              ],
+              "status": { "code": 1 }
+            },
+            {
+              "traceId": "7d5b1f402e6c8da3d4e5f60718293a4b",
+              "spanId": "d4e5f60718290002",
+              "name": "openai.chat",
+              "kind": 3,
+              "startTimeUnixNano": "1783683602000000000",
+              "endTimeUnixNano": "1783683603100000000",
+              "attributes": [
+                { "key": "llm.request.type", "value": { "stringValue": "chat" } },
+                { "key": "gen_ai.system", "value": { "stringValue": "openai" } },
+                { "key": "gen_ai.request.model", "value": { "stringValue": "gpt-4o-mini" } },
+                { "key": "gen_ai.usage.prompt_tokens", "value": { "intValue": "150" } },
+                { "key": "gen_ai.usage.completion_tokens", "value": { "intValue": "40" } }
+              ],
+              "status": { "code": 1 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

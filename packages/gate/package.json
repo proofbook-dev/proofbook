@@ -1,0 +1,14 @@
+{
+  "name": "@proofbook/gate",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@proofbook/crosswalk": "workspace:*",
+    "@proofbook/normalize": "workspace:*",
+    "@proofbook/schema": "workspace:*",
+    "zod": "^3.24.0"
+  }
+}
