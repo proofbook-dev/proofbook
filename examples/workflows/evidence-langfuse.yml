@@ -1,0 +1,57 @@
+# Proofbook evidence from langfuse.
+# Project-scoped key pair; self-hosted instances set LANGFUSE_HOST.
+#
+# Nightly: archive yesterday's traces while the vendor still has them.
+# Monthly: seal last month into a signed evidence bundle (OIDC-bound).
+name: proofbook-evidence-langfuse
+on:
+  schedule:
+    - cron: "17 5 * * *"   # nightly pull
+    - cron: "0 6 1 * *"    # monthly seal, first of the month
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # this line is what signs the bundle
+  contents: read
+
+env:
+  LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+  LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+  LANGFUSE_HOST: ${{ vars.LANGFUSE_HOST }}
+
+jobs:
+  pull:
+    if: github.event.schedule != '0 6 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Pull yesterday's traces
+        run: npx proofbook pull --source langfuse --period last-2d --out traces/langfuse
+      - name: Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-langfuse-${{ github.run_id }}
+          path: traces/langfuse/
+          retention-days: 90
+
+  seal:
+    if: github.event.schedule == '0 6 1 * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Seal last month from langfuse
+        run: npx proofbook seal --source langfuse --period last-month --sign oidc
+      - name: Chain summary
+        run: npx proofbook chain --markdown >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbook-evidence-${{ github.run_id }}
+          path: .proofbook/store/bundles/
+          if-no-files-found: error
+      # To feed the hosted chain and auditor portal, add:
+      #   env: { PROOFBOOK_TOKEN: ${{ secrets.PROOFBOOK_TOKEN }} }
+      #   run: npx proofbook push

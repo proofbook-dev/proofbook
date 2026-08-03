@@ -6,4 +6,5 @@ export * from "./commands/seal.js";
 export * from "./commands/verify.js";
 export * from "./commands/init.js";
 export * from "./commands/gate.js";
+export * from "./commands/pull.js";
 export * from "./commands/misc.js";

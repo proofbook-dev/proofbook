@@ -3,6 +3,7 @@ import { sealCommand } from "./commands/seal.js";
 import { verifyCommand } from "./commands/verify.js";
 import { chainCommand } from "./commands/chain.js";
 import { gateCommand } from "./commands/gate.js";
+import { pullCommand, pullForCommand } from "./commands/pull.js";
 import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
 import {
@@ -16,6 +17,7 @@ const HELP = `proofbook · evidence layer for agentic AI systems
 
   proof init                    detect your stack, write config, explain the clock
   proof report [traces...]      evaluate traces → Agent Trust Report (HTML + JSON)
+  proof pull                    fetch traces from a vendor: --source datadog|langfuse|langsmith|tempo|s3
   proof ingest <traces...>      normalise traces into an event batch
   proof watch                   receive OTLP/HTTP JSON spans into ./traces/
   proof seal [traces...]        seal a period: --period 2026-07 | last-month
@@ -63,21 +65,52 @@ export async function main(argv: string[], cwd: string): Promise<number> {
   switch (command) {
     case "init":
       return initCommand({ cwd, log });
-    case "report":
+    case "report": {
+      let paths = positional;
+      if (flags.source) {
+        const pulled = await pullForCommand({
+          cwd,
+          source: flags.source,
+          period: flags.period ?? "last-30d",
+          log,
+        });
+        if (!pulled) return 1;
+        paths = [...pulled, ...positional];
+      }
       return reportCommand({
         cwd,
-        paths: positional,
+        paths,
         out: flags.out,
         subject: flags.subject,
         frameworks,
         log,
       });
+    }
+    case "pull":
+      return pullCommand({
+        cwd,
+        source: flags.source,
+        period: flags.period,
+        out: flags.out,
+        log,
+      });
     case "ingest":
       return ingestCommand({ cwd, paths: positional, out: flags.out, log });
-    case "seal":
+    case "seal": {
+      let sealPaths = positional;
+      if (flags.source) {
+        const pulled = await pullForCommand({
+          cwd,
+          source: flags.source,
+          period: flags.period ?? "last-month",
+          log,
+        });
+        if (!pulled) return 1;
+        sealPaths = [...pulled, ...positional];
+      }
       return sealCommand({
         cwd,
-        paths: positional,
+        paths: sealPaths,
         out: flags.out,
         subject: flags.subject,
         frameworks,
@@ -87,6 +120,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         sign: flags.sign,
         log,
       });
+    }
     case "chain":
       return chainCommand({ cwd, markdown: "markdown" in flags, log });
     case "gate":

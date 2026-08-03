@@ -19,6 +19,7 @@
     "@proofbook/report": "workspace:*",
     "@proofbook/schema": "workspace:*",
     "@proofbook/seal": "workspace:*",
+    "@proofbook/sources": "workspace:*",
     "@proofbook/store": "workspace:*"
   }
 }
