@@ -1,0 +1,189 @@
+# Proofbook Crosswalk · NIST AI Risk Management Framework 1.0.
+#
+# requirement_summary fields are Proofbook's own paraphrases of RMF
+# subcategories, never the framework text. Runtime evidence SUPPORTS a
+# subcategory; the RMF is voluntary and organisational, and no span
+# satisfies it alone. What traces cannot observe is declared, and reads
+# as declared.
+
+framework: nist-ai-rmf
+version: "1.0"
+crosswalk_version: "0.1.0"
+
+controls:
+  - id: nist-ai-rmf-measure-2.7
+    article: "MEASURE 2.7"
+    title: AI system is monitored in operation
+    requirement_summary: >
+      The system's functioning in production is tracked: each execution
+      is recorded with identity and duration, continuously across the
+      period.
+    assertions:
+      - id: nist-m27-lifecycle
+        description: Every agent run in the period emits a complete lifecycle record.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "coverage(AgentRun, [run_id, agent_id, started_at, ended_at]) >= 0.99"
+        partial_expression: "coverage(AgentRun, [run_id, agent_id, started_at, ended_at]) >= 0.80"
+        evidence:
+          selector: AgentRun
+          sample: 20
+          summarise: [count, date_range, distinct_agents]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: nist-ai-rmf-measure-2.5
+    article: "MEASURE 2.5"
+    title: Failures are visible and robustness is demonstrated
+    requirement_summary: >
+      Operational failures are recorded with their nature and timing,
+      and robustness testing is documented by a named owner.
+    assertions:
+      - id: nist-m25-anomalies
+        description: Failures during operation carry an error type and timestamp.
+        source_class: observed
+        capability: span_coverage
+        expression: "coverage(Error, [error_type, at]) >= 0.99"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: nist-m25-testing
+        description: A named owner attests that robustness testing records exist.
+        source_class: declared
+        expression: "declared(robustness_testing_records)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: nist-ai-rmf-govern-3.2
+    article: "GOVERN 3.2"
+    title: Human oversight roles are defined and exercised
+    requirement_summary: >
+      Humans intervene in system operation at defined points, and each
+      intervention is attributable to a person.
+    assertions:
+      - id: nist-g32-exercised
+        description: At least one human checkpoint was recorded during the period.
+        source_class: observed
+        capability: human_oversight
+        expression: "exists(HumanCheckpoint)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: nist-g32-attributable
+        description: Oversight decisions carry an actor reference (digest, never the identity).
+        source_class: observed
+        capability: human_oversight
+        expression: "coverage(HumanCheckpoint, [actor_ref]) >= 0.99"
+        partial_expression: "coverage(HumanCheckpoint, [actor_ref]) >= 0.80"
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: nist-ai-rmf-map-inventory
+    article: "MAP"
+    title: The models in production are inventoried from runtime
+    requirement_summary: >
+      Which models and providers actually processed production work is
+      known from the record, not from a maintained list.
+    assertions:
+      - id: nist-map-identity
+        description: Every model call records which model and which provider processed it.
+        source_class: observed
+        capability: model_identity
+        expression: "coverage(ModelCall, [provider, model]) >= 0.99"
+        partial_expression: "coverage(ModelCall, [provider, model]) >= 0.80"
+        evidence:
+          selector: ModelCall
+          sample: 20
+          summarise: [count, distinct_models]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: nist-map-models-present
+        description: At least one model identity is observable in the period.
+        source_class: observed
+        capability: model_identity
+        expression: "distinct(ModelCall, model) >= 1"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: nist-ai-rmf-govern-accountability
+    article: "GOVERN"
+    title: System actions are attributable to an accountable execution
+    requirement_summary: >
+      Model calls belong to identified agent executions, and delegation
+      between agents is recorded, so responsibility for any action can
+      be traced.
+    assertions:
+      - id: nist-gov-attribution
+        description: Model calls are linked to an identified agent run.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "ratio(ModelCall[linked(AgentRun)], ModelCall) >= 0.99"
+        partial_expression: "ratio(ModelCall[linked(AgentRun)], ModelCall) >= 0.80"
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: nist-gov-delegation
+        description: Delegations between agents record both parties.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "coverage(Delegation, [parent_agent, child_agent]) >= 0.99"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: nist-ai-rmf-manage-tools
+    article: "MANAGE"
+    title: Third-party and tool interactions are managed from the record
+    requirement_summary: >
+      The system's interactions with external tools are recorded with
+      identity and outcome, so tool risk is managed against what
+      actually ran.
+    assertions:
+      - id: nist-man-tools
+        description: Tool invocations carry a tool identity and an outcome.
+        source_class: observed
+        capability: tool_invocation
+        expression: "coverage(ToolCall, [tool_name, outcome]) >= 0.99"
+        partial_expression: "coverage(ToolCall, [tool_name, outcome]) >= 0.80"
+        evidence:
+          selector: ToolCall
+          sample: 20
+          summarise: [count, distinct_tools]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: nist-ai-rmf-govern-policies
+    article: "GOVERN 1"
+    title: AI risk management policy is in place
+    requirement_summary: >
+      A policy governing AI risk exists, is owned, and is current.
+    assertions:
+      - id: nist-gov-policy
+        description: A named owner attests that the AI risk management policy exists and is current.
+        source_class: declared
+        expression: "declared(ai_risk_management_policy)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable

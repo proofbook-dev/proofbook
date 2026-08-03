@@ -7,7 +7,7 @@ digests, never content.
 
 Point it at a directory of OTLP traces and it produces an Agent Trust
 Report: control-by-control verdicts against compliance frameworks
-(EU AI Act Articles 12, 14 and 50 today), with honest `unevaluable`
+(EU AI Act, ISO/IEC 42001 and NIST AI RMF today), with honest `unevaluable`
 verdicts where the telemetry cannot support a conclusion. Seal a period
 and you get a signed, hash-chained bundle an auditor can verify offline.
 
@@ -69,6 +69,7 @@ Two GitHub Actions wrap the same CLI:
 | `packages/seal` | Deterministic, hash-chained bundle construction and verification |
 | `packages/provenance` | Sigstore keyless signing, in-toto attestation, offline verify |
 | `packages/store` | The local evidence store: period continuity, gap recording |
+| `packages/sources` | Vendor trace connectors: datadog, langfuse, langsmith, tempo, s3 |
 | `packages/gate` | The PR instrumentation gate: scanner, lock file, regression diff |
 | `packages/cli` | The `proof` command |
-| `crosswalk/` | The published crosswalk data (frameworks, equivalences, JSON Schema) |
+| `packages/crosswalk/data/` | The crosswalk data (frameworks, equivalences, JSON Schema); mirrored to [proofbook-dev/crosswalk](https://github.com/proofbook-dev/crosswalk) |

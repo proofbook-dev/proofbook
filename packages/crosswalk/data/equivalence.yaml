@@ -11,42 +11,42 @@ equivalences:
   - evidence: Complete agent run lifecycle records
     controls:
       eu-ai-act: [eu-ai-act-a12-record, eu-ai-act-a12-period]
-      iso-42001: { pending: ["A.6.2.6", "A.6.2.8"] }
-      nist-ai-rmf: { pending: ["MEASURE 2.7"] }
+      iso-42001: [iso-42001-a6.2.6-operation, iso-42001-a6.2.8-event-logs]
+      nist-ai-rmf: [nist-ai-rmf-measure-2.7]
 
   - evidence: Model and provider identity per call
     controls:
       eu-ai-act: [eu-ai-act-a12-record]
-      iso-42001: { pending: ["A.6.2.4"] }
+      iso-42001: [iso-42001-a6.2.4-validation]
 
   - evidence: Content digests for inputs and outputs
     controls:
       eu-ai-act: [eu-ai-act-a12-input]
-      iso-42001: { pending: ["A.7.5"] }
+      iso-42001: [iso-42001-a7.5-data-provenance]
 
   - evidence: Tool invocation records with identity and outcome
     controls:
       eu-ai-act: [eu-ai-act-a12-tools]
-      iso-42001: { pending: ["A.6.2.6"] }
+      iso-42001: [iso-42001-a6.2.6-operation]
 
   - evidence: Declared transparency disclosures
     controls:
       eu-ai-act: [eu-ai-act-a50-disclosure, eu-ai-act-a50-marking]
-      iso-42001: { pending: ["A.8.2"] }
+      iso-42001: [iso-42001-a8.2-documentation]
 
   - evidence: Human oversight checkpoint records
     controls:
       eu-ai-act: [eu-ai-act-a14-checkpoints, eu-ai-act-a14-actors]
-      iso-42001: { pending: ["A.9.4"] }
-      nist-ai-rmf: { pending: ["GOVERN 3.2"] }
+      iso-42001: [iso-42001-a9.4-oversight]
+      nist-ai-rmf: [nist-ai-rmf-govern-3.2]
 
   - evidence: Documented instructions, capabilities and limitations
     controls:
       eu-ai-act: [eu-ai-act-a13-instructions, eu-ai-act-a13-limitations]
-      iso-42001: { pending: ["A.8.3"] }
+      iso-42001: [iso-42001-a8.3-external-reporting]
 
   - evidence: Operational failure records and testing attestations
     controls:
       eu-ai-act: [eu-ai-act-a15-robustness]
-      iso-42001: { pending: ["A.6.2.4"] }
-      nist-ai-rmf: { pending: ["MEASURE 2.5"] }
+      iso-42001: [iso-42001-a6.2.4-validation]
+      nist-ai-rmf: [nist-ai-rmf-measure-2.5]

@@ -66,9 +66,7 @@ export function loadCrosswalkText(text: string): LoadedCrosswalk {
 export const defaultCrosswalkDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "..",
-  "..",
-  "..",
-  "crosswalk",
+  "data",
 );
 
 export async function loadCrosswalkDir(

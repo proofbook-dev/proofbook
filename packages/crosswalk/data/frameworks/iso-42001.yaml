@@ -1,0 +1,209 @@
+# Proofbook Crosswalk · ISO/IEC 42001 (AI management systems), Annex A.
+#
+# requirement_summary fields are Proofbook's own paraphrases, never the
+# standard's text. Runtime evidence SUPPORTS an Annex A control; nothing
+# about a span satisfies a management-system clause by itself, and this
+# file never claims otherwise. Controls a trace cannot observe are
+# declared or configured, and read as such.
+
+framework: iso-42001
+version: "2023"
+crosswalk_version: "0.1.0"
+
+controls:
+  - id: iso-42001-a6.2.6-operation
+    article: "A.6.2.6"
+    title: AI system operation and monitoring
+    requirement_summary: >
+      The organisation monitors the AI system in operation, at a level
+      that shows each execution and the external actions it took.
+    assertions:
+      - id: iso-a626-lifecycle
+        description: Every agent run in the period emits a complete lifecycle record.
+        source_class: observed
+        capability: agent_lifecycle
+        expression: "coverage(AgentRun, [run_id, agent_id, started_at, ended_at]) >= 0.99"
+        partial_expression: "coverage(AgentRun, [run_id, agent_id, started_at, ended_at]) >= 0.80"
+        evidence:
+          selector: AgentRun
+          sample: 20
+          summarise: [count, date_range, distinct_agents]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: iso-a626-tools
+        description: External actions taken by the system are recorded with identity and outcome.
+        source_class: observed
+        capability: tool_invocation
+        expression: "coverage(ToolCall, [tool_name, outcome]) >= 0.99"
+        partial_expression: "coverage(ToolCall, [tool_name, outcome]) >= 0.80"
+        evidence:
+          selector: ToolCall
+          sample: 20
+          summarise: [count, distinct_tools]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a6.2.8-event-logs
+    article: "A.6.2.8"
+    title: Recording of event logs across operation
+    requirement_summary: >
+      Events during operation are recorded automatically, including
+      failures, so later analysis of incidents is possible.
+    assertions:
+      - id: iso-a628-runs-exist
+        description: Operational activity in the period produced event records at all.
+        source_class: observed
+        capability: span_coverage
+        expression: "exists(AgentRun)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: iso-a628-anomalies
+        description: Failures are recorded with their nature and timing.
+        source_class: observed
+        capability: span_coverage
+        expression: "coverage(Error, [error_type, at]) >= 0.99"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a6.2.4-validation
+    article: "A.6.2.4"
+    title: Verification and validation of the AI system
+    requirement_summary: >
+      The organisation can identify which models processed production
+      work, and holds verification and validation records for them.
+    assertions:
+      - id: iso-a624-model-identity
+        description: Every model call records which model and which provider processed it.
+        source_class: observed
+        capability: model_identity
+        expression: "coverage(ModelCall, [provider, model]) >= 0.99"
+        partial_expression: "coverage(ModelCall, [provider, model]) >= 0.80"
+        evidence:
+          selector: ModelCall
+          sample: 20
+          summarise: [count, distinct_models]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: iso-a624-validation-records
+        description: A named owner attests that verification and validation records exist for the models in use.
+        source_class: declared
+        expression: "declared(verification_and_validation_records)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a7.5-data-provenance
+    article: "A.7.5"
+    title: Provenance of data through the system
+    requirement_summary: >
+      Inputs and outputs are traceable by digest, so any recorded item
+      can later be matched to the exact content that produced it.
+    assertions:
+      - id: iso-a75-digests
+        description: Model calls carry content digests for prompt and completion.
+        source_class: observed
+        capability: content_integrity
+        expression: "coverage(ModelCall, [content_ref.prompt, content_ref.completion]) >= 0.99"
+        partial_expression: "coverage(ModelCall, [content_ref.prompt, content_ref.completion]) >= 0.80"
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a4-resources
+    article: "A.4"
+    title: Resources of the AI system are accounted for
+    requirement_summary: >
+      Compute consumption of the AI system is quantified per model call,
+      supporting resource documentation.
+    assertions:
+      - id: iso-a4-tokens
+        description: Model calls carry input and output token counts.
+        source_class: observed
+        capability: token_accounting
+        expression: "coverage(ModelCall, [token_usage.input, token_usage.output]) >= 0.99"
+        partial_expression: "coverage(ModelCall, [token_usage.input, token_usage.output]) >= 0.80"
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a9.4-oversight
+    article: "A.9.4"
+    title: Human oversight in the intended use of the system
+    requirement_summary: >
+      Human intervention points exist in operation and are exercised,
+      with the type and decision of each intervention recorded.
+    assertions:
+      - id: iso-a94-exercised
+        description: At least one human checkpoint was recorded during the period.
+        source_class: observed
+        capability: human_oversight
+        expression: "exists(HumanCheckpoint)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+      - id: iso-a94-complete
+        description: Checkpoints record their type and decision.
+        source_class: observed
+        capability: human_oversight
+        expression: "coverage(HumanCheckpoint, [type, decision]) >= 0.99"
+        partial_expression: "coverage(HumanCheckpoint, [type, decision]) >= 0.80"
+        evidence:
+          selector: HumanCheckpoint
+          sample: 10
+          summarise: [count, date_range]
+        verdict_map:
+          pass: evidenced
+          partial: partially_evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a8.2-documentation
+    article: "A.8.2"
+    title: System documentation and information for users
+    requirement_summary: >
+      Documentation about the AI system is available to the people who
+      use and are affected by it.
+    assertions:
+      - id: iso-a82-docs
+        description: A named owner attests that user-facing system documentation exists and is current.
+        source_class: declared
+        expression: "declared(system_documentation_for_users)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
+
+  - id: iso-42001-a8.3-external-reporting
+    article: "A.8.3"
+    title: Capabilities and limitations are communicated externally
+    requirement_summary: >
+      Interested parties can learn what the system can and cannot do,
+      and how to report concerns.
+    assertions:
+      - id: iso-a83-limitations
+        description: A named owner attests that capabilities and limitations documentation is published.
+        source_class: declared
+        expression: "declared(capabilities_and_limitations_documentation)"
+        verdict_map:
+          pass: evidenced
+          fail: not_evidenced
+          no_data: unevaluable
