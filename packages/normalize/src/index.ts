@@ -26,6 +26,14 @@ export async function loadBundledGenerations(): Promise<GenerationRules[]> {
   const rulesets = await Promise.all(
     files.map(async (f) => loadGenerationRules(await readFile(join(generationsDir, f), "utf8"))),
   );
+  // Custom emitters: PROOFBOOK_GENERATIONS=comma,separated,yaml,paths
+  // adds user mapping files (the ~20 lines of YAML the docs promise).
+  const extra = process.env.PROOFBOOK_GENERATIONS;
+  if (extra) {
+    for (const path of extra.split(",").map((p) => p.trim()).filter(Boolean)) {
+      rulesets.push(loadGenerationRules(await readFile(path, "utf8")));
+    }
+  }
   return rulesets.sort((a, b) => b.precedence - a.precedence);
 }
 

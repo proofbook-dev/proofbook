@@ -4,6 +4,7 @@ import { verifyCommand } from "./commands/verify.js";
 import { chainCommand } from "./commands/chain.js";
 import { gateCommand } from "./commands/gate.js";
 import { pullCommand, pullForCommand } from "./commands/pull.js";
+import { exportCommand } from "./commands/export.js";
 import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
 import {
@@ -16,7 +17,7 @@ import {
 const HELP = `proofbook · evidence layer for agentic AI systems
 
   proof init                    detect your stack, write config, explain the clock
-  proof report [traces...]      evaluate traces → Agent Trust Report (HTML + JSON)
+  proof report [traces...]      evaluate traces → Agent Trust Report  (--offline · --traces <dir>)
   proof pull                    fetch traces from a vendor: --source datadog|langfuse|langsmith|tempo|s3
   proof ingest <traces...>      normalise traces into an event batch
   proof watch                   receive OTLP/HTTP JSON spans into ./traces/
@@ -28,6 +29,7 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof answer <questions.csv>  draft questionnaire answers from evidence
   proof crosswalk list          list frameworks and controls
   proof crosswalk show <id>     show one control
+  proof export <bundle-dir>     evidence for GRC platforms: --format vanta|drata
 
   Options: --out <path> · --subject <name> · --frameworks <a,b> · --previous <root> · --port <n>
            gate: --baseline <git-ref> (read the lock from that ref) · --write (rebuild the lock)
@@ -48,8 +50,15 @@ function parseArgs(argv: string[]): Parsed {
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i]!;
     if (arg.startsWith("--")) {
-      flags[arg.slice(2)] = rest[i + 1] ?? "";
-      i += 1;
+      // A flag only consumes the next token when it is a value, so
+      // boolean flags (--offline, --supersede) never eat a neighbour.
+      const next = rest[i + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        flags[arg.slice(2)] = next;
+        i += 1;
+      } else {
+        flags[arg.slice(2)] = "";
+      }
     } else {
       positional.push(arg);
     }
@@ -67,6 +76,14 @@ export async function main(argv: string[], cwd: string): Promise<number> {
       return initCommand({ cwd, log });
     case "report": {
       let paths = positional;
+      if (flags.traces) paths = [...paths, flags.traces];
+      if ("offline" in flags) {
+        // Hard guarantee, not a promise: any network attempt throws.
+        globalThis.fetch = (() => {
+          throw new Error("offline mode: network access refused");
+        }) as typeof fetch;
+        log("offline: network access is disabled for this run; any attempt would fail loudly.");
+      }
       if (flags.source) {
         const pulled = await pullForCommand({
           cwd,
@@ -98,6 +115,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
       return ingestCommand({ cwd, paths: positional, out: flags.out, log });
     case "seal": {
       let sealPaths = positional;
+      if (flags.traces) sealPaths = [...sealPaths, flags.traces];
       if (flags.source) {
         const pulled = await pullForCommand({
           cwd,
@@ -155,6 +173,8 @@ export async function main(argv: string[], cwd: string): Promise<number> {
       }
       return answerCommand({ cwd, csvPath, paths: positional.slice(1), out: flags.out, log });
     }
+    case "export":
+      return exportCommand({ dir: positional[0], format: flags.format, out: flags.out, log });
     case "crosswalk":
       return crosswalkCommand({ sub: positional[0], id: positional[1], log });
     case "watch": {
