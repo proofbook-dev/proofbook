@@ -9,3 +9,4 @@ export * from "./commands/gate.js";
 export * from "./commands/pull.js";
 export * from "./commands/misc.js";
 export * from "./config.js";
+export * from "./commands/explain.js";

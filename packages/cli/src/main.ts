@@ -5,6 +5,7 @@ import { chainCommand } from "./commands/chain.js";
 import { gateCommand } from "./commands/gate.js";
 import { pullCommand, pullForCommand } from "./commands/pull.js";
 import { exportCommand } from "./commands/export.js";
+import { explainCommand } from "./commands/explain.js";
 import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
 import { loadConfig } from "./config.js";
@@ -31,6 +32,7 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof answer <questions.csv>  draft questionnaire answers from evidence
   proof crosswalk list          list frameworks and controls
   proof crosswalk show <id>     show one control
+  proof explain <topic>         a coverage gap → the engineering task that closes it
   proof export <bundle-dir>     evidence for GRC platforms: --format vanta|drata
 
   Options: --out <path> · --subject <name> · --frameworks <a,b> · --previous <root> · --port <n>
@@ -177,6 +179,8 @@ export async function main(argv: string[], cwd: string): Promise<number> {
       }
       return answerCommand({ cwd, csvPath, paths: positional.slice(1), out: flags.out, log });
     }
+    case "explain":
+      return explainCommand(positional[0], log);
     case "export":
       return exportCommand({ dir: positional[0], format: flags.format, out: flags.out, log });
     case "crosswalk":
