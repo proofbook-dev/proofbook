@@ -8,6 +8,8 @@ import { exportCommand } from "./commands/export.js";
 import { explainCommand } from "./commands/explain.js";
 import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
+import { doctorCommand } from "./commands/doctor.js";
+import { mcpCommand } from "./commands/mcp.js";
 import { loadConfig } from "./config.js";
 import {
   answerCommand,
@@ -34,9 +36,15 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof crosswalk show <id>     show one control
   proof explain <topic>         a coverage gap → the engineering task that closes it
   proof export <bundle-dir>     evidence for GRC platforms: --format vanta|drata
+  proof doctor                  diagnostics: generations, mapping, capabilities, chain
+  proof mcp                     read-only MCP server over stdio for coding agents
 
   Options: --out <path> · --subject <name> · --frameworks <a,b> · --previous <root> · --port <n>
            gate: --baseline <git-ref> (read the lock from that ref) · --write (rebuild the lock)
+           --json on report/verify/gate/doctor: machine-readable output, stable schema
+
+  Exit codes: 0 clean · 1 tool error · 2 controls regressed or bundle invalid
+              3 insufficient data · 4 provenance expectations unmet
 
   Local, offline, no account. Traces never leave this machine;
   reports and bundles contain digests, never content.`;
@@ -106,6 +114,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         out: flags.out,
         subject,
         frameworks,
+        json: "json" in flags,
         log,
       });
     }
@@ -153,6 +162,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         baseline: flags.baseline,
         write: "write" in flags,
         frameworks,
+        json: "json" in flags,
         log,
       });
     case "push":
@@ -168,6 +178,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         dir,
         expectKey: flags["expect-key"],
         expectRepo: flags["expect-repo"],
+        json: "json" in flags,
         log,
       });
     }
@@ -181,6 +192,10 @@ export async function main(argv: string[], cwd: string): Promise<number> {
     }
     case "explain":
       return explainCommand(positional[0], log);
+    case "doctor":
+      return doctorCommand({ cwd, json: "json" in flags, log });
+    case "mcp":
+      return mcpCommand({ cwd, subject, frameworks });
     case "export":
       return exportCommand({ dir: positional[0], format: flags.format, out: flags.out, log });
     case "crosswalk":

@@ -33,7 +33,7 @@ describe("proof gate", () => {
     }
   });
 
-  it("write then check round-trips clean, and regression exits 1 with names", async () => {
+  it("write then check round-trips clean, and regression exits 2 with names", async () => {
     const cwd = await tree({ "src/claims.ts": CLAIMS, "src/llm.ts": MODEL });
     try {
       expect(await gateCommand({ cwd, write: true, log: () => {} })).toBe(0);
@@ -41,7 +41,7 @@ describe("proof gate", () => {
 
       await rm(join(cwd, "src/claims.ts"));
       const { log, lines } = collector();
-      expect(await gateCommand({ cwd, log })).toBe(1);
+      expect(await gateCommand({ cwd, log })).toBe(2); // regression, not tool error
       const out = lines.join("\n");
       expect(out).toContain("eu-ai-act-a14-checkpoints");
       expect(out).toContain("src/claims.ts:1");

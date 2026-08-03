@@ -9,13 +9,13 @@ import type { Log } from "../log.js";
  * from the loaded crosswalk so the list can never drift.
  */
 
-interface Topic {
+export interface Topic {
   capability: string;
   what: string;
   how: string[];
 }
 
-const TOPICS: Record<string, Topic> = {
+export const TOPICS: Record<string, Topic> = {
   "human-checkpoints": {
     capability: "human_oversight",
     what:

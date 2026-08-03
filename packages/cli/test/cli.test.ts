@@ -58,7 +58,7 @@ describe("proof report", () => {
     const cwd = await tmpProject();
     const out = collector();
     const code = await reportCommand({ cwd, paths: [], log: out.log });
-    expect(code).toBe(1);
+    expect(code).toBe(3); // insufficient data, not a tool error
     expect(out.text()).toContain("No trace files found");
     expect(out.text()).toContain("proof report path/to/traces.jsonl");
   });
@@ -96,7 +96,7 @@ describe("proof seal → verify", () => {
 
     const out = collector();
     const code = await verifyCommand({ cwd, dir: join(cwd, "bundle"), log: out.log });
-    expect(code).toBe(1);
+    expect(code).toBe(2) /* bundle invalid */;
     expect(out.text()).toContain("INVALID");
     expect(out.text()).toContain("coverage.json");
   });
@@ -182,5 +182,50 @@ describe("proof crosswalk / answer / watch", () => {
     expect(received.trim().split("\n")).toHaveLength(1);
     const found = await discoverTraces(cwd);
     expect(found[0]).toContain("received.jsonl");
+  });
+});
+
+describe("proof doctor", () => {
+  it("reports generations, mapping and capabilities, exit 0 with traces present", async () => {
+    const cwd = await tmpProject();
+    await mkdir(join(cwd, "traces"), { recursive: true });
+    await cp(basic, join(cwd, "traces", "prod.json"));
+    const out = collector();
+    const { doctorCommand } = await import("../src/commands/doctor.js");
+    expect(await doctorCommand({ cwd, log: out.log })).toBe(0);
+    expect(out.text()).toContain("otel-genai");
+    expect(out.text()).toMatch(/spans mapped/);
+  });
+
+  it("exits 3 (insufficient data) with no traces, and --json is parseable", async () => {
+    const cwd = await tmpProject();
+    const out = collector();
+    const { doctorCommand } = await import("../src/commands/doctor.js");
+    expect(await doctorCommand({ cwd, json: true, log: out.log })).toBe(3);
+    const parsed = JSON.parse(out.text()) as { schema: string; checks: { id: string; status: string }[] };
+    expect(parsed.schema).toBe("proofbook.doctor/1");
+    expect(parsed.checks.find((c) => c.id === "traces")?.status).toBe("fail");
+  });
+});
+
+describe("proof mcp tools", () => {
+  it("get_coverage_gaps and get_verdict answer from local traces", async () => {
+    const cwd = await tmpProject();
+    await mkdir(join(cwd, "traces"), { recursive: true });
+    await cp(basic, join(cwd, "traces", "prod.json"));
+    const { buildMcpTools } = await import("../src/commands/mcp.js");
+    const tools = buildMcpTools(cwd);
+    expect(tools.map((t) => t.name)).toEqual([
+      "list_controls",
+      "get_verdict",
+      "explain_derivation",
+      "get_coverage_gaps",
+    ]);
+    const gaps = (await tools[3]!.handler({})) as { gaps: { capability: string; fix?: unknown }[] };
+    expect(Array.isArray(gaps.gaps)).toBe(true);
+    const verdict = (await tools[1]!.handler({ control_id: "eu-ai-act-a12-record" })) as {
+      verdict: string;
+    };
+    expect(verdict.verdict).toBe("evidenced");
   });
 });

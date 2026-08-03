@@ -13,16 +13,24 @@ export interface ReportOptions {
   out?: string | undefined;
   subject?: string | undefined;
   frameworks?: string[] | undefined;
+  json?: boolean | undefined;
   log: Log;
 }
 
 export async function reportCommand(opts: ReportOptions): Promise<number> {
-  const { cwd, log } = opts;
+  const { cwd } = opts;
+  // In --json mode the transcript goes nowhere; stdout carries exactly
+  // one JSON document and nothing else.
+  const log: Log = opts.json ? () => {} : opts.log;
 
   let paths = opts.paths;
   if (paths.length === 0) {
     paths = await discoverTraces(cwd);
     if (paths.length === 0) {
+      if (opts.json) {
+        opts.log(JSON.stringify({ schema: "proofbook.report/1", error: "no_traces" }, null, 2));
+        return 3;
+      }
       log("No trace files found.");
       log("");
       log("Looked in: ., ./traces, ./telemetry, ./otel, ./tmp, ./out");
@@ -38,7 +46,7 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
       }
       log("Or point at an existing export:  proof report path/to/traces.jsonl");
       log("Or pull from your vendor:        proof pull --source datadog|langfuse|langsmith|tempo|s3");
-      return 1;
+      return 3;
     }
     log(`Found ${paths.length} trace file(s):`);
     for (const p of paths) log(`  ${relative(cwd, p) || p}`);
@@ -50,7 +58,7 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
     result = await runPipeline(paths, opts.frameworks);
   } catch (err) {
     if (err instanceof NormalizeError) {
-      log(err.message);
+      opts.log(opts.json ? JSON.stringify({ schema: "proofbook.report/1", error: err.message }) : err.message);
       return 1;
     }
     throw err;
@@ -73,6 +81,34 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
     jsonPath,
     JSON.stringify({ batch: result.batch, evaluations: result.evaluations }, null, 2),
   );
+
+  if (opts.json) {
+    const impacts = capabilityImpacts(result.batch, [...result.frameworks.values()]);
+    opts.log(
+      JSON.stringify(
+        {
+          schema: "proofbook.report/1",
+          subject: opts.subject ?? defaultSubject(cwd),
+          files: paths.length,
+          counts: result.batch.counts,
+          detections: result.batch.detections,
+          capabilities: impacts,
+          evaluations: result.evaluations.map((ev) => ({
+            framework: ev.framework,
+            summary: ev.summary,
+            controls: ev.controls.map((c) => ({
+              control_id: c.control_id,
+              verdict: c.verdict,
+            })),
+          })),
+          outputs: { html: htmlPath, json: jsonPath },
+        },
+        null,
+        2,
+      ),
+    );
+    return 0;
+  }
 
   discoveryBlock(result.batch, paths.length, log);
   const impacts = capabilityImpacts(result.batch, [...result.frameworks.values()]);

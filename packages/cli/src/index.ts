@@ -10,3 +10,5 @@ export * from "./commands/pull.js";
 export * from "./commands/misc.js";
 export * from "./config.js";
 export * from "./commands/explain.js";
+export * from "./commands/doctor.js";
+export * from "./commands/mcp.js";

@@ -40,6 +40,7 @@ export interface GateOptions {
   /** Rescan and rewrite the local lock instead of checking. */
   write?: boolean | undefined;
   frameworks?: string[] | undefined;
+  json?: boolean | undefined;
   log: (message: string) => void;
 }
 
@@ -132,6 +133,23 @@ export async function gateCommand(opts: GateOptions): Promise<number> {
 
   const report = compareToLock(lock, scan.sites);
 
+  if (opts.json) {
+    log(
+      JSON.stringify(
+        {
+          schema: "proofbook.gate/1",
+          clean: report.regressions.length === 0,
+          regressions: report.regressions,
+          enforced: report.enforced.length,
+          unenforced: report.unenforced.length,
+        },
+        null,
+        2,
+      ),
+    );
+    return report.regressions.length > 0 ? 2 : 0;
+  }
+
   if (report.regressions.length > 0) {
     for (const regression of report.regressions) {
       printRegression(regression, log);
@@ -141,7 +159,7 @@ export async function gateCommand(opts: GateOptions): Promise<number> {
     log(`${n} control regression${n === 1 ? "" : "s"}. Merging this leaves the next`);
     log("sealed period unable to evidence the controls above; they will read");
     log("unevaluable, and the evidence chain will say so.");
-    return 1;
+    return 2;
   }
 
   log(
