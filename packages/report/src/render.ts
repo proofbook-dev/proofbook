@@ -258,7 +258,7 @@ function checklistSection(evaluations: FrameworkEvaluation[]): string {
         (c) => `<a class="row" href="#${esc(c.control_id)}">
           <span class="flag v-${c.verdict}">${FLAG[c.verdict]}</span>
           <span class="row-body">
-            <span class="row-title">${esc(c.title)}</span>
+            <span class="row-title">${esc(c.title)}${c.article ? ` <span class="row-article">${esc(c.article)}</span>` : ""}</span>
             <span class="row-status">${esc(statusSentence(c))}</span>
           </span>
           <span class="row-verdict v-${c.verdict}">${esc(PLAIN[c.verdict])}</span>
@@ -269,7 +269,7 @@ function checklistSection(evaluations: FrameworkEvaluation[]): string {
   return evaluations
     .map(
       (ev) => `<section>
-        <h2>The checklist <span class="dim">· ${esc(FRAMEWORK_NAMES[ev.framework] ?? ev.framework)}${ev.controls[0]?.article ? "" : ""}</span></h2>
+        <h2>The checklist <span class="dim">· ${esc(FRAMEWORK_NAMES[ev.framework] ?? ev.framework)}</span></h2>
         <div class="checklist">${rows(ev)}</div>
       </section>`,
     )
@@ -607,6 +607,11 @@ export function renderReport(input: ReportInput): string {
 
   /* checklist */
   .checklist { background: var(--doc); border: 1px solid var(--rule); }
+  .row-article {
+    font-family: var(--mono); font-size: 11px; color: var(--graphite);
+    border: 1px solid var(--rule); border-radius: 4px; padding: 1px 6px;
+    margin-left: 8px; white-space: nowrap; vertical-align: 1px;
+  }
   .row { display: flex; gap: 16px; align-items: baseline; padding: 13px 18px; border-bottom: 1px solid var(--rule-faint); text-decoration: none; color: var(--ink); }
   .row:last-child { border-bottom: none; }
   .row:hover { background: var(--paper); }
