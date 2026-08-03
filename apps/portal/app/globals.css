@@ -1,0 +1,91 @@
+/* Lab report, not product page. System fonts only: a vendor-risk
+   analyst inspecting network requests must find nothing third-party. */
+:root {
+  --ink: #16140f;
+  --muted: #6b675e;
+  --paper: #fbfaf7;
+  --line: #e5e1d8;
+  --accent: #e8470a;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #b42318;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+a { color: inherit; }
+h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; }
+h2 { font-size: 18px; margin: 34px 0 10px; }
+h3 { font-size: 15px; margin: 18px 0 6px; }
+p { margin: 8px 0; }
+code, pre { font-family: var(--mono); font-size: 13px; }
+pre {
+  background: #14130f; color: #f2efe6; padding: 12px 14px;
+  border-radius: 6px; overflow-x: auto; user-select: all;
+}
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.topbar {
+  border-bottom: 1px solid var(--line); padding: 10px 0; font-size: 13px;
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+}
+.topbar .brand { font-family: var(--mono); font-weight: 600; text-decoration: none; }
+.tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--line); margin: 18px 0 26px; font-size: 14px; }
+.tabs a { text-decoration: none; padding: 6px 2px 10px; color: var(--muted); }
+.tabs a[aria-current="page"] { color: var(--ink); border-bottom: 2px solid var(--accent); }
+.counts { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+.count {
+  border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px;
+  min-width: 108px; background: #fff;
+}
+.count b { display: block; font-size: 22px; font-weight: 600; }
+.count span { font-size: 12px; color: var(--muted); }
+.verdict { font-family: var(--mono); font-size: 12px; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+.v-evidenced { background: #e6f4ea; color: var(--ok); }
+.v-partially_evidenced { background: #fdf3d7; color: var(--warn); }
+.v-not_evidenced { background: #fdecea; color: var(--bad); }
+.v-contradicted { background: #fdecea; color: var(--bad); font-weight: 700; }
+.v-unevaluable { background: #eeece6; color: var(--muted); }
+.source { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; border: 1px solid; }
+.s-observed { color: #0b4f8a; border-color: #0b4f8a; background: #eaf3fb; }
+.s-configured { color: #6d28a8; border-color: #6d28a8; background: #f4ecfb; }
+.s-declared { color: #8a5a0b; border-color: #8a5a0b; background: #fbf3e4; }
+.check-ok { color: var(--ok); font-family: var(--mono); }
+.check-bad { color: var(--bad); font-family: var(--mono); }
+.gapbox {
+  border: 2px dashed var(--bad); background: #fdecea; border-radius: 6px;
+  padding: 12px 16px; margin: 10px 0; color: var(--bad);
+}
+.card { border: 1px solid var(--line); border-radius: 6px; background: #fff; padding: 16px 18px; margin: 12px 0; }
+.scope { border-left: 3px solid var(--accent); padding: 4px 14px; margin: 16px 0; background: #fff; }
+.btn {
+  display: inline-block; border: 1px solid var(--ink); border-radius: 6px;
+  padding: 7px 14px; font-size: 14px; text-decoration: none; background: #fff; cursor: pointer;
+}
+.btn-dark { background: var(--ink); color: #fff; }
+input, select {
+  font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+}
+label { font-size: 13px; color: var(--muted); display: block; margin: 10px 0 3px; }
+.filters { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin: 0 0 18px; }
+details { border: 1px solid var(--line); border-radius: 6px; background: #fff; padding: 10px 14px; margin: 8px 0; }
+summary { cursor: pointer; }
+footer { margin: 60px 0 30px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.watermark { display: none; }
+@media print {
+  .tabs, .topbar nav, .btn { display: none !important; }
+  .watermark {
+    display: block; position: fixed; inset: 45% 0 auto 0; text-align: center;
+    font-size: 26px; color: rgba(0,0,0,0.08); transform: rotate(-24deg); z-index: 10;
+  }
+  body { background: #fff; }
+}
