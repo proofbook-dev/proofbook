@@ -7,6 +7,7 @@ import { pullCommand, pullForCommand } from "./commands/pull.js";
 import { exportCommand } from "./commands/export.js";
 import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
+import { loadConfig } from "./config.js";
 import {
   answerCommand,
   crosswalkCommand,
@@ -17,6 +18,7 @@ import {
 const HELP = `proofbook · evidence layer for agentic AI systems
 
   proof init                    detect your stack, write config, explain the clock
+                                (.proofbook/config.json: subject + frameworks defaults)
   proof report [traces...]      evaluate traces → Agent Trust Report  (--offline · --traces <dir>)
   proof pull                    fetch traces from a vendor: --source datadog|langfuse|langsmith|tempo|s3
   proof ingest <traces...>      normalise traces into an event batch
@@ -69,7 +71,9 @@ function parseArgs(argv: string[]): Parsed {
 export async function main(argv: string[], cwd: string): Promise<number> {
   const { command, positional, flags } = parseArgs(argv);
   const log = console.log;
-  const frameworks = flags.frameworks?.split(",").map((f) => f.trim());
+  const config = await loadConfig(cwd);
+  const frameworks = flags.frameworks?.split(",").map((f) => f.trim()) ?? config.frameworks;
+  const subject = flags.subject ?? config.subject;
 
   switch (command) {
     case "init":
@@ -98,7 +102,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         cwd,
         paths,
         out: flags.out,
-        subject: flags.subject,
+        subject,
         frameworks,
         log,
       });
@@ -130,7 +134,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         cwd,
         paths: sealPaths,
         out: flags.out,
-        subject: flags.subject,
+        subject,
         frameworks,
         previous: flags.previous,
         period: flags.period,
