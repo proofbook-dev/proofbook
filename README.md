@@ -94,13 +94,18 @@ Recomputes every digest, checks the chain link and the signature, and prints che
 Read-only in both forms; nothing can seal, push, share or attest through MCP.
 
 ```sh
-# local traces, stdio: the instrumentation loop for coding agents
-claude mcp add proofbook -- npx -y proofbook mcp
+# local traces, stdio: the instrumentation loop for coding agents.
+# Run inside the repo whose traces you want to query; @latest matters
+# (mcp shipped in 0.1.2, and a bare "proofbook" can hit npx's stale cache)
+claude mcp add proofbook -- npx -y proofbook@latest mcp
+claude mcp list          # → proofbook: … - ✔ Connected
 
 # pushed bundles, remote clients: coverage, verdicts, gaps, regressions
 claude mcp add proofbook https://api.proofbook.dev/mcp \
   -t http -H "Authorization: Bearer $PROOFBOOK_TOKEN"
 ```
+
+Not connecting? The four causes, in order of likelihood: stale npx cache (pin `@latest`), project scope (`claude mcp add` registers for the current project; use `--scope user` for everywhere), an already-open session (restart, then `/mcp`), or no traces in the directory (the tools say so instead of failing). Full walkthrough: [docs](https://proofbook.dev/docs/#mcp).
 
 `get_coverage_gaps` returns each missing capability with the exact attributes that close it, so an agent can open the PR that instruments it.
 
