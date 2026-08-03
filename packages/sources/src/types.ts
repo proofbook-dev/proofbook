@@ -123,3 +123,18 @@ export function hexId(seed: string, bytes: number): string {
   }
   return out.slice(0, bytes * 2);
 }
+
+/**
+ * The retention wall. Vendors delete traces on schedules much shorter
+ * than audit periods, which makes sealing time-critical: evidence can
+ * only be produced inside the window, and everything before it is
+ * unrecoverable. Backfill is impossible by design and the product
+ * never implies otherwise. Figures are vendor defaults; plans vary.
+ */
+export const RETENTION: Record<string, { days: number; note: string } | null> = {
+  datadog: { days: 15, note: "15 days by default; 90 with the retention add-on" },
+  langfuse: { days: 90, note: "90 days on Core; longer on paid plans" },
+  langsmith: { days: 14, note: "14 days base retention; 400 days extended" },
+  tempo: { days: 30, note: "configured per installation; 30 days is a common default" },
+  s3: null,
+};

@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { parseWindow, pullToDir, getSource, SOURCES, SourceError } from "@proofbook/sources";
+import { parseWindow, pullToDir, getSource, RETENTION, SOURCES, SourceError } from "@proofbook/sources";
 import type { Log } from "../log.js";
 
 /**
@@ -18,6 +18,27 @@ export interface PullOptions {
   log: Log;
 }
 
+
+/** Say what has already been lost, before fetching anything. */
+function retentionWall(source: string, fromISO: string, log: Log): void {
+  const r = RETENTION[source];
+  if (!r) return;
+  const horizon = new Date(Date.now() - r.days * 86400_000);
+  log(`${source} retention: ${r.note}.`);
+  log(
+    `Available for evidence: roughly ${horizon.toISOString().slice(0, 10)} to today. ` +
+      `Everything earlier is unrecoverable; backfill is not possible.`,
+  );
+  if (new Date(fromISO) < horizon) {
+    log(
+      `⚠ The requested window starts ${fromISO.slice(0, 10)}, before the retention horizon: ` +
+        `expect missing spans, and coverage will say so.`,
+    );
+  }
+  log("Sealing only works inside this window; the nightly pull keeps it open:");
+  log("  https://github.com/proofbook-dev/proofbook/tree/main/examples/workflows");
+  log("");
+}
 export async function pullCommand(opts: PullOptions): Promise<number> {
   const { log } = opts;
   if (!opts.source) {
@@ -36,6 +57,7 @@ export async function pullCommand(opts: PullOptions): Promise<number> {
     const window = parseWindow(opts.period ?? "last-30d");
     const dir = opts.out ?? join(opts.cwd, "traces", opts.source);
     getSource(opts.source);
+    retentionWall(opts.source, window.fromISO, log);
     const paths = await pullToDir(opts.source, window, dir, { log });
     if (paths.length === 0) {
       log(`No spans found at ${opts.source} between ${window.fromISO} and ${window.toISO}.`);
@@ -64,6 +86,8 @@ export async function pullForCommand(args: {
 }): Promise<string[] | null> {
   try {
     const window = parseWindow(args.period);
+    getSource(args.source);
+    retentionWall(args.source, window.fromISO, args.log);
     const dir = join(args.cwd, ".proofbook", "pulled", args.source);
     const paths = await pullToDir(args.source, window, dir, { log: args.log });
     if (paths.length === 0) {
