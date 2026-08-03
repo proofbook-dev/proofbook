@@ -281,21 +281,38 @@ function actionsSection(evaluations: FrameworkEvaluation[]): string {
   if (gaps.length === 0) {
     return `<section><h2>What to do next</h2><p class="lede">Nothing. Every control in scope is backed by runtime evidence. Seal the period and share it.</p></section>`;
   }
-  const items = gaps
+  const KIND_NOTE: Record<string, string> = {
+    Instrumentation: "engineering work: emit or enrich telemetry",
+    Configuration: "verify a setting; not observable from traces",
+    "Sign-off": "a named owner signs a declaration; no engineering work",
+  };
+  const order = ["Instrumentation", "Configuration", "Sign-off"];
+  const groups = order
+    .map((kind) => ({ kind, items: gaps.filter((g) => g.kind === kind) }))
+    .filter((g) => g.items.length > 0);
+  const blocks = groups
     .map(
-      (g) => `<li>
-        <span class="kind">${esc(g.kind)}</span>
-        <div>
-          <b>${esc(g.control.title)}</b> <span class="dim">(${esc(g.control.control_id)})</span><br>
-          ${esc(g.action)}
+      (group) => `<div class="action-group">
+        <div class="action-head">
+          <span>${esc(group.kind)}</span>
+          <span class="dim">${esc(KIND_NOTE[group.kind] ?? "")} · ${group.items.length}</span>
         </div>
-      </li>`,
+        ${group.items
+          .map(
+            (g) => `<div class="action">
+          <div class="action-title">${esc(g.control.title)}</div>
+          <div class="action-id">${esc(g.control.control_id)}</div>
+          <p class="action-step">${esc(g.action)}</p>
+        </div>`,
+          )
+          .join("")}
+      </div>`,
     )
     .join("");
   return `<section>
     <h2>What to do next</h2>
-    <p class="lede">Each open box above, turned into its next concrete step. Ordered by how much it matters.</p>
-    <ul class="actions">${items}</ul>
+    <p class="lede">Each open box above, turned into its next concrete step, grouped by the kind of work it takes.</p>
+    ${blocks}
   </section>`;
 }
 
@@ -622,9 +639,16 @@ export function renderReport(input: ReportInput): string {
   .row-verdict { font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 
   /* actions */
-  ul.actions { list-style: none; }
-  ul.actions li { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--rule-faint); font-size: 14px; max-width: 72ch; }
-  .kind { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--rule); padding: 2px 8px; height: fit-content; white-space: nowrap; }
+  .action-group { margin: 30px 0 0; }
+  .action-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+  .action-head .dim { letter-spacing: .02em; text-transform: none; }
+  .action { padding: 16px 0 18px; border-bottom: 1px solid var(--rule-faint); }
+  .action:last-child { border-bottom: 0; }
+  .action-title { font-weight: 600; }
+  .action-id { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--graphite); margin: 2px 0 6px; }
+  .action-step { margin: 0; max-width: 72ch; }
 
   table { border-collapse: collapse; width: 100%; margin: 10px 0 6px; font-size: 13px; }
   th { text-align: left; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); font-weight: 500; padding: 6px 16px 6px 0; border-bottom: 1px solid var(--rule); }
