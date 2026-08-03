@@ -1,0 +1,13 @@
+{
+  "name": "proofbook",
+  "version": "0.1.0",
+  "description": "Evidence layer for agentic AI systems: turn OTLP agent traces into signed, independently verifiable audit evidence (EU AI Act, ISO/IEC 42001, NIST AI RMF).",
+  "type": "module",
+  "bin": { "proof": "dist/cli.mjs", "proofbook": "dist/cli.mjs" },
+  "files": ["dist", "generations", "data", "README.md"],
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/proofbook-dev/proofbook.git" },
+  "homepage": "https://proofbook.dev",
+  "keywords": ["ai", "compliance", "eu-ai-act", "iso-42001", "nist-ai-rmf", "opentelemetry", "audit", "evidence", "agents"]
+}

@@ -6,3 +6,4 @@ tmp/
 .provenant/
 .proofbook/
 bundle-*/
+publish/
