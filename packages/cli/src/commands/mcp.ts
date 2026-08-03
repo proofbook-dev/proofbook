@@ -189,6 +189,30 @@ export async function mcpCommand(opts: {
   const tools = buildMcpTools(opts.cwd, opts.frameworks);
   const write = (msg: unknown) => process.stdout.write(`${JSON.stringify(msg)}\n`);
 
+  // stdout belongs to the protocol; anything said to a human goes to
+  // stderr. Run from a terminal rather than a client, silence reads as
+  // a hang, so say what is actually happening and how to wire it up.
+  if (process.stdin.isTTY) {
+    process.stderr.write(
+      [
+        `proofbook mcp: serving ${tools.length} read-only tools over stdio, waiting for an MCP client.`,
+        "Nothing is stuck; this command speaks JSON-RPC on stdin/stdout and is not meant to be run by hand.",
+        "",
+        "Wire it into a client instead:",
+        "  claude mcp add proofbook -- npx -y proofbook mcp",
+        '  (any MCP client: command "npx", args ["-y", "proofbook", "mcp"])',
+        "",
+        "Remote clients (ChatGPT connectors, hosted agents) use the portal endpoint",
+        "over your pushed bundles: https://api.proofbook.dev/mcp (Bearer pbk_ token).",
+        "",
+        "Ctrl+C to stop.",
+        "",
+      ].join("\n"),
+    );
+  } else {
+    process.stderr.write(`proofbook mcp server ready on stdio (${tools.length} tools)\n`);
+  }
+
   async function handleLine(line: string): Promise<void> {
     if (!line.trim()) return;
     let msg: RpcMessage;
