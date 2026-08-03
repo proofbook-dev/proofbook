@@ -228,6 +228,18 @@ export async function main(argv: string[], cwd: string): Promise<number> {
 }
 
 // Direct execution (development: `pnpm proofbook ...` runs this via tsx).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// The published bundle sets __PB_ENTRY in its banner and calls main()
+// itself; without the sentinel this guard also matches inside the
+// bundle (argv[1] is the bundle file) and every command runs twice.
+declare global {
+  // eslint-disable-next-line no-var
+  var __PB_ENTRY: boolean | undefined;
+}
+if (!globalThis.__PB_ENTRY && process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  // `proof report | head` must end quietly, not with an EPIPE trace.
+  process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EPIPE") process.exit(0);
+    throw err;
+  });
   process.exitCode = await main(process.argv.slice(2), process.cwd());
 }

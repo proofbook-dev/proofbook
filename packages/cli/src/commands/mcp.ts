@@ -189,17 +189,16 @@ export async function mcpCommand(opts: {
   const tools = buildMcpTools(opts.cwd, opts.frameworks);
   const write = (msg: unknown) => process.stdout.write(`${JSON.stringify(msg)}\n`);
 
-  const rl = createInterface({ input: process.stdin, terminal: false });
-  for await (const line of rl) {
-    if (!line.trim()) continue;
+  async function handleLine(line: string): Promise<void> {
+    if (!line.trim()) return;
     let msg: RpcMessage;
     try {
       msg = JSON.parse(line) as RpcMessage;
     } catch {
-      continue;
+      return;
     }
-    if (msg.method?.startsWith("notifications/")) continue;
-    if (msg.id === undefined || msg.id === null || !msg.method) continue;
+    if (msg.method?.startsWith("notifications/")) return;
+    if (msg.id === undefined || msg.id === null || !msg.method) return;
 
     try {
       switch (msg.method) {
@@ -271,5 +270,19 @@ export async function mcpCommand(opts: {
       });
     }
   }
+
+  // Event listeners rather than for-await: the readline async iterator
+  // does not reliably settle on stdin EOF, which leaves the process
+  // exiting through an unresolved top-level await. Messages are chained
+  // so responses keep request order even when handlers do real work.
+  const rl = createInterface({ input: process.stdin, terminal: false });
+  let queue: Promise<void> = Promise.resolve();
+  await new Promise<void>((resolve) => {
+    rl.on("line", (line) => {
+      queue = queue.then(() => handleLine(line));
+    });
+    rl.on("close", resolve);
+  });
+  await queue;
   return 0;
 }
