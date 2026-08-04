@@ -1,0 +1,159 @@
+# Traducciones de los títulos de control y resúmenes de requisitos.
+# Paráfrasis propias de Proofbook, traducidas; nunca el texto reglamentario.
+# Redactadas internamente; pendientes de revisión nativa de cumplimiento.
+# Los textos en inglés del bundle sellado son los vinculantes.
+
+eu-ai-act-a12-record:
+  title: Registro automático de eventos durante toda la vida operativa
+  requirement_summary: >
+    El sistema registra eventos automáticamente mientras opera, a un nivel
+    que sustenta la trazabilidad de su funcionamiento.
+eu-ai-act-a12-period:
+  title: Se registra el período de cada uso
+  requirement_summary: >
+    El registro cubre el inicio y el fin de cada período de uso, de modo que
+    cualquier uso individual puede situarse en el tiempo.
+eu-ai-act-a12-input:
+  title: Datos de entrada y salida trazables por digest
+  requirement_summary: >
+    Los datos que entran y salen del sistema durante el uso pueden
+    identificarse y comprobarse en su integridad, sin retener el contenido en
+    el registro de evidencia.
+eu-ai-act-a12-attribution:
+  title: Los eventos registrados son atribuibles a una identidad de agente
+  requirement_summary: >
+    La actividad registrada puede atribuirse al agente concreto que la
+    ejecutó; la actividad de agentes no identificados socava la trazabilidad
+    del registro.
+eu-ai-act-a12-anomalies:
+  title: Las anomalías operativas se registran con su naturaleza y momento
+  requirement_summary: >
+    Cuando la operación falla o se degrada, el propio fallo queda registrado
+    en una forma que permite identificar después situaciones de riesgo.
+eu-ai-act-a12-tools:
+  title: Se registran las acciones externas del sistema
+  requirement_summary: >
+    Las acciones del sistema sobre herramientas y servicios externos se
+    registran con la identidad del destino y el resultado.
+eu-ai-act-a13-instructions:
+  title: Los responsables del despliegue reciben instrucciones de uso
+  requirement_summary: >
+    El sistema va acompañado de instrucciones que permiten operarlo
+    adecuadamente e interpretar su salida. Un documento mantenido por
+    personas; la telemetría no puede observarlo.
+eu-ai-act-a13-limitations:
+  title: Se comunican capacidades y limitaciones
+  requirement_summary: >
+    Los responsables del despliegue saben qué puede y qué no puede hacer el
+    sistema, incluidos los modos de fallo conocidos y las circunstancias que
+    degradan el rendimiento.
+eu-ai-act-a14-checkpoints:
+  title: La supervisión humana se ejerce y registra en operación
+  requirement_summary: >
+    La supervisión no solo está diseñada sino que se usa: los puntos de
+    control humanos (aprobación, revisión, anulación, aborto) ocurren en la
+    operación real y se registran con su tipo y decisión.
+eu-ai-act-a14-actors:
+  title: Las decisiones de supervisión son atribuibles a una persona
+  requirement_summary: >
+    Cada decisión humana registrada lleva una referencia a la persona que la
+    tomó, como digest de identidad y no la identidad misma.
+eu-ai-act-a15-robustness:
+  title: Los fallos son visibles en operación y la robustez se prueba
+  requirement_summary: >
+    La resiliencia tiene dos mitades: los fallos en operación se capturan en
+    forma inspeccionable, y la exactitud y la robustez se prueban antes y
+    durante el despliegue. Lo primero es observable; lo segundo es una
+    práctica de pruebas que un responsable designado atesta.
+eu-ai-act-a50-disclosure:
+  title: Las personas son informadas de que interactúan con un sistema de IA
+  requirement_summary: >
+    Las personas físicas que interactúan con el sistema son informadas de
+    ello, salvo que resulte evidente por el contexto. La telemetría de
+    ejecución no puede observar qué se mostró a una persona; esto es una
+    declaración de un responsable designado.
+eu-ai-act-a50-marking:
+  title: El contenido sintético se marca de forma legible por máquina
+  requirement_summary: >
+    Las salidas generadas de audio, imagen, vídeo o texto se marcan como
+    generadas artificialmente de forma legible por máquina. Verificable desde
+    la configuración del pipeline de salida, no desde las trazas.
+iso-42001-a6.2.6-operation:
+  title: Operación y supervisión del sistema de IA
+  requirement_summary: >
+    La organización supervisa el sistema de IA en operación, a un nivel que
+    muestra cada ejecución y las acciones externas que realizó.
+iso-42001-a6.2.8-event-logs:
+  title: Registro de bitácoras de eventos durante la operación
+  requirement_summary: >
+    Los eventos durante la operación se registran automáticamente, incluidos
+    los fallos, de modo que sea posible el análisis posterior de incidentes.
+iso-42001-a6.2.4-validation:
+  title: Verificación y validación del sistema de IA
+  requirement_summary: >
+    La organización puede identificar qué modelos procesaron trabajo de
+    producción y conserva para ellos registros de verificación y validación.
+iso-42001-a7.5-data-provenance:
+  title: Procedencia de los datos a través del sistema
+  requirement_summary: >
+    Entradas y salidas son trazables por digest, de modo que cualquier
+    elemento registrado puede cotejarse después con el contenido exacto que
+    lo produjo.
+iso-42001-a4-resources:
+  title: Los recursos del sistema de IA se contabilizan
+  requirement_summary: >
+    El consumo de cómputo del sistema de IA se cuantifica por llamada a
+    modelo, en apoyo de la documentación de recursos.
+iso-42001-a9.4-oversight:
+  title: Supervisión humana en el uso previsto del sistema
+  requirement_summary: >
+    Existen puntos de intervención humana en operación y se ejercen, con el
+    tipo y la decisión de cada intervención registrados.
+iso-42001-a8.2-documentation:
+  title: Documentación del sistema e información para usuarios
+  requirement_summary: >
+    La documentación sobre el sistema de IA está disponible para las personas
+    que lo usan y las afectadas por él.
+iso-42001-a8.3-external-reporting:
+  title: Capacidades y limitaciones comunicadas externamente
+  requirement_summary: >
+    Las partes interesadas pueden saber qué puede y qué no puede hacer el
+    sistema, y cómo comunicar inquietudes.
+nist-ai-rmf-measure-2.7:
+  title: El sistema de IA se supervisa en operación
+  requirement_summary: >
+    El funcionamiento del sistema en producción se sigue de forma continua:
+    cada ejecución se registra con identidad y duración durante todo el
+    período.
+nist-ai-rmf-measure-2.5:
+  title: Los fallos son visibles y la robustez queda demostrada
+  requirement_summary: >
+    Los fallos operativos se registran con su naturaleza y momento, y las
+    pruebas de robustez las documenta un responsable designado.
+nist-ai-rmf-govern-3.2:
+  title: Los roles de supervisión humana están definidos y se ejercen
+  requirement_summary: >
+    Hay personas que intervienen en la operación del sistema en puntos
+    definidos, y cada intervención es atribuible a una persona.
+nist-ai-rmf-map-inventory:
+  title: Los modelos en producción se inventarían desde la ejecución
+  requirement_summary: >
+    Qué modelos y proveedores procesaron realmente el trabajo de producción
+    se sabe por el registro, no por una lista mantenida a mano.
+nist-ai-rmf-govern-accountability:
+  title: Las acciones del sistema son atribuibles a una ejecución responsable
+  requirement_summary: >
+    Las llamadas a modelos pertenecen a ejecuciones de agentes identificadas,
+    y la delegación entre agentes queda registrada, de modo que la
+    responsabilidad de cualquier acción puede rastrearse.
+nist-ai-rmf-manage-tools:
+  title: Las interacciones con terceros y herramientas se gestionan desde el registro
+  requirement_summary: >
+    Las interacciones del sistema con herramientas externas se registran con
+    identidad y resultado, de modo que el riesgo de herramientas se gestiona
+    sobre lo que realmente se ejecutó.
+nist-ai-rmf-govern-policies:
+  title: Existe una política de gestión de riesgos de IA
+  requirement_summary: >
+    Existe una política que gobierna los riesgos de IA, tiene responsable y
+    está vigente.

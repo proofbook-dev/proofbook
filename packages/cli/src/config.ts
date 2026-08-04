@@ -15,6 +15,8 @@ import { join } from "node:path";
 export interface ProjectConfig {
   subject?: string;
   frameworks?: string[];
+  /** Report language (en, de, fr, es, it, nl). Presentation only. */
+  lang?: string;
 }
 
 export async function loadConfig(cwd: string): Promise<ProjectConfig> {
@@ -23,6 +25,7 @@ export async function loadConfig(cwd: string): Promise<ProjectConfig> {
     return {
       ...(typeof raw.subject === "string" ? { subject: raw.subject } : {}),
       ...(Array.isArray(raw.frameworks) ? { frameworks: raw.frameworks.map(String) } : {}),
+      ...(typeof raw.lang === "string" ? { lang: raw.lang } : {}),
     };
   } catch {
     return {};

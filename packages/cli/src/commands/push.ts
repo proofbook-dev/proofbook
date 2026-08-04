@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readBundleDir } from "@proofbook/seal";
 import { liveSealed, openStore, pushArchive, pushBundle, PushError } from "@proofbook/store";
+import { loadConfig } from "../config.js";
 import type { Log } from "../log.js";
 
 /**
@@ -52,9 +53,11 @@ export async function pushCommand(opts: PushCmdOptions): Promise<number> {
 
   const size = [...files.values()].reduce((n, c) => n + c.length, 0);
   try {
+    const { lang } = await loadConfig(opts.cwd);
     const result = await pushBundle(files, root, {
       url: opts.url,
       token: opts.token,
+      language: lang,
       fetchImpl: opts.fetchImpl,
     });
     log(`pushed ${label} (${(size / 1_000_000).toFixed(1)} MB, ${files.size} files) · root ${result.root.slice(0, 16)}…`);

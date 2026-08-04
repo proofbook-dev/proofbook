@@ -11,6 +11,8 @@
 export interface PushOptions {
   url?: string | undefined;
   token?: string | undefined;
+  /** Report language metadata, sent beside the bundle, never inside it. */
+  language?: string | undefined;
   fetchImpl?: typeof fetch | undefined;
 }
 
@@ -44,7 +46,11 @@ export async function pushBundle(
         authorization: `Bearer ${token}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify({ root, files: Object.fromEntries(files) }),
+      body: JSON.stringify({
+        root,
+        files: Object.fromEntries(files),
+        ...(opts.language ? { language: opts.language } : {}),
+      }),
     });
   } catch (err) {
     throw new PushError(

@@ -24,6 +24,7 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof init                    detect your stack, write config, explain the clock
                                 (.proofbook/config.json: subject + frameworks defaults)
   proof report [traces...]      evaluate traces → Agent Trust Report  (--offline · --traces <dir>)
+                                --lang en|de|fr|es|it|nl: report language (sealed data stays English)
   proof pull                    fetch traces from a vendor: --source datadog|langfuse|langsmith|tempo|s3
   proof ingest <traces...>      normalise traces into an event batch
   proof watch                   receive OTLP/HTTP JSON spans into ./traces/
@@ -91,6 +92,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
   const config = await loadConfig(cwd);
   const frameworks = flags.frameworks?.split(",").map((f) => f.trim()) ?? config.frameworks;
   const subject = flags.subject ?? config.subject;
+  const lang = flags.lang ?? config.lang;
 
   switch (command) {
     case "init":
@@ -122,6 +124,7 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         subject,
         frameworks,
         json: "json" in flags,
+        lang,
         log,
       });
     }

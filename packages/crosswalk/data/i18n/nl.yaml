@@ -1,0 +1,160 @@
+# Vertalingen van controletitels en samenvattingen van vereisten.
+# Proofbooks eigen parafrasen, vertaald; nooit de verordeningstekst.
+# Intern opgesteld; gemarkeerd voor moedertaalreview door compliance.
+# De Engelse teksten in de verzegelde bundel zijn leidend.
+
+eu-ai-act-a12-record:
+  title: Automatische registratie van gebeurtenissen gedurende de gehele levensduur
+  requirement_summary: >
+    Het systeem registreert tijdens de werking automatisch gebeurtenissen, op
+    een niveau dat de traceerbaarheid van zijn functioneren draagt.
+eu-ai-act-a12-period:
+  title: De periode van elk gebruik wordt geregistreerd
+  requirement_summary: >
+    De registratie omvat begin en einde van elke gebruiksperiode, zodat elk
+    afzonderlijk gebruik in de tijd te plaatsen is.
+eu-ai-act-a12-input:
+  title: In- en uitvoergegevens traceerbaar per digest
+  requirement_summary: >
+    De gegevens die tijdens gebruik het systeem in- en uitgaan kunnen worden
+    geïdentificeerd en op integriteit gecontroleerd, zonder de inhoud zelf in
+    het bewijsdossier te bewaren.
+eu-ai-act-a12-attribution:
+  title: Geregistreerde gebeurtenissen zijn toe te schrijven aan een agent-identiteit
+  requirement_summary: >
+    Geregistreerde activiteit is toe te schrijven aan de specifieke agent die
+    haar uitvoerde; activiteit van niet-geïdentificeerde agents ondergraaft
+    de traceerbaarheid van het dossier.
+eu-ai-act-a12-anomalies:
+  title: Operationele anomalieën worden geregistreerd met aard en tijdstip
+  requirement_summary: >
+    Wanneer de werking faalt of terugloopt, wordt het falen zelf vastgelegd
+    in een vorm die latere herkenning van risicosituaties ondersteunt.
+eu-ai-act-a12-tools:
+  title: Externe handelingen van het systeem worden geregistreerd
+  requirement_summary: >
+    Handelingen van het systeem richting externe tools en diensten worden
+    geregistreerd met de identiteit van het doel en de uitkomst.
+eu-ai-act-a13-instructions:
+  title: Exploitanten ontvangen een gebruiksaanwijzing
+  requirement_summary: >
+    Het systeem gaat vergezeld van instructies waarmee een exploitant het
+    passend kan bedienen en de uitvoer kan interpreteren. Een door mensen
+    onderhouden document; telemetrie kan het niet waarnemen.
+eu-ai-act-a13-limitations:
+  title: Mogelijkheden en beperkingen worden gecommuniceerd
+  requirement_summary: >
+    Exploitanten weten wat het systeem wel en niet kan, inclusief bekende
+    faalwijzen en de omstandigheden die de prestaties verminderen.
+eu-ai-act-a14-checkpoints:
+  title: Menselijk toezicht wordt in bedrijf uitgeoefend en geregistreerd
+  requirement_summary: >
+    Toezicht is niet alleen ontworpen maar wordt gebruikt: menselijke
+    controlepunten (goedkeuring, beoordeling, overschrijving, afbreking)
+    vinden plaats in de echte werking en worden met type en beslissing
+    geregistreerd.
+eu-ai-act-a14-actors:
+  title: Toezichtbeslissingen zijn toe te schrijven aan een persoon
+  requirement_summary: >
+    Elke geregistreerde menselijke beslissing draagt een verwijzing naar de
+    persoon die haar nam, als identiteits-digest in plaats van de identiteit
+    zelf.
+eu-ai-act-a15-robustness:
+  title: Falen is zichtbaar in bedrijf, robuustheid wordt getest
+  requirement_summary: >
+    Veerkracht heeft twee helften: falen tijdens de werking wordt vastgelegd
+    in een inspecteerbare vorm, en nauwkeurigheid en robuustheid worden voor
+    en tijdens de inzet getest. Het eerste is waarneembaar; het tweede is een
+    testpraktijk die een benoemde verantwoordelijke bevestigt.
+eu-ai-act-a50-disclosure:
+  title: Personen worden geïnformeerd dat zij met een AI-systeem interacteren
+  requirement_summary: >
+    Natuurlijke personen die met het systeem interacteren worden daarover
+    geïnformeerd, tenzij het uit de context blijkt. Runtime-telemetrie kan
+    niet waarnemen wat aan een persoon is getoond; dit is een verklaring van
+    een benoemde verantwoordelijke.
+eu-ai-act-a50-marking:
+  title: Synthetische content wordt machineleesbaar gemarkeerd
+  requirement_summary: >
+    Gegenereerde audio-, beeld-, video- of tekstuitvoer wordt machineleesbaar
+    gemarkeerd als kunstmatig gegenereerd. Verifieerbaar vanuit de
+    configuratie van de uitvoerpipeline, niet vanuit traces.
+iso-42001-a6.2.6-operation:
+  title: Werking en bewaking van het AI-systeem
+  requirement_summary: >
+    De organisatie bewaakt het AI-systeem in bedrijf, op een niveau dat elke
+    uitvoering en de externe handelingen ervan zichtbaar maakt.
+iso-42001-a6.2.8-event-logs:
+  title: Registratie van gebeurtenislogboeken tijdens de werking
+  requirement_summary: >
+    Gebeurtenissen tijdens de werking worden automatisch geregistreerd,
+    inclusief falen, zodat latere analyse van incidenten mogelijk is.
+iso-42001-a6.2.4-validation:
+  title: Verificatie en validatie van het AI-systeem
+  requirement_summary: >
+    De organisatie kan vaststellen welke modellen productiewerk hebben
+    verwerkt en bewaart daarvoor verificatie- en validatiedossiers.
+iso-42001-a7.5-data-provenance:
+  title: Herkomst van gegevens door het systeem heen
+  requirement_summary: >
+    In- en uitvoer zijn traceerbaar per digest, zodat elk geregistreerd item
+    later te matchen is met de exacte inhoud die het voortbracht.
+iso-42001-a4-resources:
+  title: De middelen van het AI-systeem worden verantwoord
+  requirement_summary: >
+    Het rekenverbruik van het AI-systeem wordt per modelaanroep
+    gekwantificeerd, ter ondersteuning van de middelendocumentatie.
+iso-42001-a9.4-oversight:
+  title: Menselijk toezicht in het beoogde gebruik van het systeem
+  requirement_summary: >
+    Menselijke interventiepunten bestaan in bedrijf en worden benut, waarbij
+    type en beslissing van elke interventie worden geregistreerd.
+iso-42001-a8.2-documentation:
+  title: Systeemdocumentatie en informatie voor gebruikers
+  requirement_summary: >
+    Documentatie over het AI-systeem is beschikbaar voor de mensen die het
+    gebruiken en erdoor geraakt worden.
+iso-42001-a8.3-external-reporting:
+  title: Mogelijkheden en beperkingen extern gecommuniceerd
+  requirement_summary: >
+    Belanghebbenden kunnen te weten komen wat het systeem wel en niet kan, en
+    hoe zij zorgen kunnen melden.
+nist-ai-rmf-measure-2.7:
+  title: Het AI-systeem wordt in bedrijf bewaakt
+  requirement_summary: >
+    Het functioneren van het systeem in productie wordt gevolgd: elke
+    uitvoering wordt met identiteit en duur geregistreerd, doorlopend over de
+    periode.
+nist-ai-rmf-measure-2.5:
+  title: Falen is zichtbaar en robuustheid is aangetoond
+  requirement_summary: >
+    Operationeel falen wordt geregistreerd met aard en tijdstip, en
+    robuustheidstests worden gedocumenteerd door een benoemde
+    verantwoordelijke.
+nist-ai-rmf-govern-3.2:
+  title: Rollen voor menselijk toezicht zijn gedefinieerd en worden uitgeoefend
+  requirement_summary: >
+    Mensen grijpen op gedefinieerde punten in de werking van het systeem in,
+    en elke interventie is toe te schrijven aan een persoon.
+nist-ai-rmf-map-inventory:
+  title: De productiemodellen worden geïnventariseerd vanuit de runtime
+  requirement_summary: >
+    Welke modellen en aanbieders daadwerkelijk productiewerk hebben verwerkt
+    is bekend uit het dossier, niet uit een onderhouden lijst.
+nist-ai-rmf-govern-accountability:
+  title: Systeemhandelingen zijn toe te schrijven aan een verantwoordelijke uitvoering
+  requirement_summary: >
+    Modelaanroepen behoren tot geïdentificeerde agent-uitvoeringen, en
+    delegatie tussen agents wordt geregistreerd, zodat de verantwoordelijkheid
+    voor elke handeling te herleiden is.
+nist-ai-rmf-manage-tools:
+  title: Interacties met derden en tools worden vanuit het dossier beheerd
+  requirement_summary: >
+    De interacties van het systeem met externe tools worden geregistreerd met
+    identiteit en uitkomst, zodat toolrisico wordt beheerd op basis van wat
+    er werkelijk draaide.
+nist-ai-rmf-govern-policies:
+  title: Een beleid voor AI-risicobeheer is aanwezig
+  requirement_summary: >
+    Een beleid dat AI-risico's beheerst bestaat, heeft een eigenaar en is
+    actueel.

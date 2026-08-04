@@ -1,0 +1,164 @@
+# Traductions des titres de contrôles et des résumés d'exigences.
+# Paraphrases propres à Proofbook, traduites ; jamais le texte réglementaire.
+# Rédigées en interne, à faire relire par un locuteur natif spécialiste conformité.
+# Les textes anglais du bundle scellé font foi.
+
+eu-ai-act-a12-record:
+  title: Enregistrement automatique des événements sur toute la durée d'exploitation
+  requirement_summary: >
+    Le système enregistre automatiquement des événements pendant son
+    fonctionnement, à un niveau qui permet la traçabilité de son
+    fonctionnement.
+eu-ai-act-a12-period:
+  title: La période de chaque utilisation est enregistrée
+  requirement_summary: >
+    L'enregistrement couvre le début et la fin de chaque période
+    d'utilisation, de sorte que toute utilisation individuelle peut être
+    située dans le temps.
+eu-ai-act-a12-input:
+  title: Données d'entrée et de sortie traçables par digest
+  requirement_summary: >
+    Les données entrant et sortant du système pendant l'utilisation peuvent
+    être identifiées et contrôlées en intégrité, sans conserver le contenu
+    lui-même dans le dossier de preuve.
+eu-ai-act-a12-attribution:
+  title: Les événements enregistrés sont attribuables à une identité d'agent
+  requirement_summary: >
+    L'activité enregistrée peut être attribuée à l'agent précis qui l'a
+    exécutée ; une activité d'agents non identifiés compromet la traçabilité
+    du dossier.
+eu-ai-act-a12-anomalies:
+  title: Les anomalies d'exploitation sont enregistrées avec leur nature et leur horodatage
+  requirement_summary: >
+    Lorsque le fonctionnement échoue ou se dégrade, la défaillance est
+    elle-même enregistrée sous une forme permettant l'identification
+    ultérieure de situations de risque.
+eu-ai-act-a12-tools:
+  title: Les actions externes du système sont enregistrées
+  requirement_summary: >
+    Les actions que le système entreprend envers des outils et services
+    externes sont enregistrées avec l'identité de la cible et le résultat.
+eu-ai-act-a13-instructions:
+  title: Les déployeurs reçoivent une notice d'utilisation
+  requirement_summary: >
+    Le système est accompagné d'instructions permettant à un déployeur de
+    l'exploiter correctement et d'interpréter ses sorties. Un document tenu
+    par des humains ; la télémétrie ne peut pas l'observer.
+eu-ai-act-a13-limitations:
+  title: Capacités et limites sont communiquées
+  requirement_summary: >
+    Les déployeurs savent ce que le système peut et ne peut pas faire, y
+    compris les modes de défaillance connus et les circonstances qui
+    dégradent la performance.
+eu-ai-act-a14-checkpoints:
+  title: La surveillance humaine est exercée et enregistrée en exploitation
+  requirement_summary: >
+    La surveillance n'est pas seulement conçue mais pratiquée : des points de
+    contrôle humains (approbation, revue, neutralisation, arrêt) surviennent
+    en exploitation réelle et sont enregistrés avec leur type et leur décision.
+eu-ai-act-a14-actors:
+  title: Les décisions de surveillance sont attribuables à une personne
+  requirement_summary: >
+    Chaque décision humaine enregistrée porte une référence à la personne qui
+    l'a prise, sous forme de digest d'identité plutôt que de l'identité
+    elle-même.
+eu-ai-act-a15-robustness:
+  title: Les défaillances sont visibles en exploitation, la robustesse est testée
+  requirement_summary: >
+    La résilience a deux volets : les défaillances en exploitation sont
+    capturées sous une forme inspectable, et l'exactitude comme la robustesse
+    sont testées avant et pendant le déploiement. Le premier est observable ;
+    le second est une pratique de test qu'un responsable nommé atteste.
+eu-ai-act-a50-disclosure:
+  title: Les personnes sont informées qu'elles interagissent avec un système d'IA
+  requirement_summary: >
+    Les personnes physiques interagissant avec le système en sont informées,
+    sauf si cela ressort du contexte. La télémétrie d'exécution ne peut pas
+    observer ce qui a été montré à une personne ; c'est une déclaration d'un
+    responsable nommé.
+eu-ai-act-a50-marking:
+  title: Les contenus synthétiques sont marqués sous forme lisible par machine
+  requirement_summary: >
+    Les sorties audio, image, vidéo ou texte générées sont marquées comme
+    artificiellement générées d'une manière lisible par machine. Vérifiable
+    depuis la configuration du pipeline de sortie, pas depuis les traces.
+iso-42001-a6.2.6-operation:
+  title: Exploitation et surveillance du système d'IA
+  requirement_summary: >
+    L'organisation surveille le système d'IA en exploitation, à un niveau qui
+    montre chaque exécution et les actions externes qu'elle a entreprises.
+iso-42001-a6.2.8-event-logs:
+  title: Enregistrement des journaux d'événements en exploitation
+  requirement_summary: >
+    Les événements en exploitation sont enregistrés automatiquement, y
+    compris les défaillances, rendant possible l'analyse ultérieure des
+    incidents.
+iso-42001-a6.2.4-validation:
+  title: Vérification et validation du système d'IA
+  requirement_summary: >
+    L'organisation peut identifier quels modèles ont traité le travail de
+    production, et détient pour eux des dossiers de vérification et de
+    validation.
+iso-42001-a7.5-data-provenance:
+  title: Provenance des données à travers le système
+  requirement_summary: >
+    Entrées et sorties sont traçables par digest, de sorte que tout élément
+    enregistré peut ensuite être rapproché du contenu exact qui l'a produit.
+iso-42001-a4-resources:
+  title: Les ressources du système d'IA sont comptabilisées
+  requirement_summary: >
+    La consommation de calcul du système d'IA est quantifiée par appel de
+    modèle, à l'appui de la documentation des ressources.
+iso-42001-a9.4-oversight:
+  title: Surveillance humaine dans l'utilisation prévue du système
+  requirement_summary: >
+    Des points d'intervention humaine existent en exploitation et sont
+    exercés, avec le type et la décision de chaque intervention enregistrés.
+iso-42001-a8.2-documentation:
+  title: Documentation du système et information des utilisateurs
+  requirement_summary: >
+    Une documentation sur le système d'IA est à la disposition des personnes
+    qui l'utilisent et de celles qu'il affecte.
+iso-42001-a8.3-external-reporting:
+  title: Capacités et limites communiquées à l'externe
+  requirement_summary: >
+    Les parties intéressées peuvent savoir ce que le système peut et ne peut
+    pas faire, et comment signaler des préoccupations.
+nist-ai-rmf-measure-2.7:
+  title: Le système d'IA est surveillé en exploitation
+  requirement_summary: >
+    Le fonctionnement du système en production est suivi : chaque exécution
+    est enregistrée avec identité et durée, en continu sur la période.
+nist-ai-rmf-measure-2.5:
+  title: Les défaillances sont visibles et la robustesse est démontrée
+  requirement_summary: >
+    Les défaillances opérationnelles sont enregistrées avec leur nature et
+    leur horodatage, et les tests de robustesse sont documentés par un
+    responsable nommé.
+nist-ai-rmf-govern-3.2:
+  title: Les rôles de surveillance humaine sont définis et exercés
+  requirement_summary: >
+    Des humains interviennent dans l'exploitation du système à des points
+    définis, et chaque intervention est attribuable à une personne.
+nist-ai-rmf-map-inventory:
+  title: Les modèles en production sont inventoriés depuis l'exécution
+  requirement_summary: >
+    Les modèles et fournisseurs qui ont réellement traité le travail de
+    production sont connus par le dossier, pas par une liste entretenue.
+nist-ai-rmf-govern-accountability:
+  title: Les actions du système sont attribuables à une exécution responsable
+  requirement_summary: >
+    Les appels de modèle appartiennent à des exécutions d'agents identifiées,
+    et la délégation entre agents est enregistrée, de sorte que la
+    responsabilité de toute action peut être retracée.
+nist-ai-rmf-manage-tools:
+  title: Les interactions avec les tiers et les outils sont gérées depuis le dossier
+  requirement_summary: >
+    Les interactions du système avec des outils externes sont enregistrées
+    avec identité et résultat, de sorte que le risque outil est géré au
+    regard de ce qui a réellement tourné.
+nist-ai-rmf-govern-policies:
+  title: Une politique de gestion des risques d'IA est en place
+  requirement_summary: >
+    Une politique encadrant les risques d'IA existe, a un responsable et est
+    à jour.

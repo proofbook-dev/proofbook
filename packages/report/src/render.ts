@@ -5,6 +5,8 @@ import type {
   NormalizedBatch,
   Verdict,
 } from "@proofbook/schema";
+import { LANGS, t, type Catalog, type ControlTranslations, type Lang } from "./i18n/index.js";
+import enCatalog from "./i18n/en.js";
 
 /**
  * The Agent Trust Report renderer.
@@ -32,7 +34,22 @@ export interface ReportInput {
   batch: NormalizedBatch;
   evaluations: FrameworkEvaluation[];
   meta: ReportMeta;
+  /**
+   * Presentation language. The sealed bundle stays canonical English;
+   * rendering the same data in another language changes nothing an
+   * auditor verifies, which is the entire design.
+   */
+  lang?: Lang;
+  /** Reviewed translations for control titles and requirement summaries. */
+  controlTranslations?: ControlTranslations;
 }
+
+// Set per render call; the renderer is synchronous, so module-level
+// current-language state is safe and keeps twelve signatures readable.
+let L: Catalog = enCatalog;
+let CT: ControlTranslations = {};
+const ctitle = (c: ControlResult): string => CT[c.control_id]?.title ?? c.title;
+const csummary = (c: ControlResult): string => CT[c.control_id]?.requirement_summary ?? c.requirement_summary;
 
 const esc = (s: unknown): string =>
   String(s)
@@ -50,28 +67,10 @@ const FLAG: Record<Verdict, string> = {
 };
 
 /** Checklist voice: what the verdict means to the person ticking boxes. */
-const PLAIN: Record<Verdict, string> = {
-  evidenced: "Ready to cite",
-  partially_evidenced: "Nearly there",
-  not_evidenced: "Not yet",
-  contradicted: "Needs attention first",
-  unevaluable: "Needs your input",
-};
-
+const plain = (v: Verdict): string => L[`plain_${v}`] as string;
 /** Formal label, used in the evidence detail. */
-const VERDICT_LABEL: Record<Verdict, string> = {
-  evidenced: "Evidenced",
-  partially_evidenced: "Partially evidenced",
-  not_evidenced: "Not evidenced",
-  contradicted: "Contradicted",
-  unevaluable: "Unevaluable",
-};
-
-const SOURCE_LABEL: Record<string, string> = {
-  observed: "Observed at runtime",
-  configured: "Verified in configuration",
-  declared: "Declared by a named owner",
-};
+const verdictLabel = (v: Verdict): string => L[`verdict_${v}`] as string;
+const sourceLabel = (sc: string): string => (L[`source_${sc}` as keyof Catalog] as string) ?? sc;
 
 const FRAMEWORK_NAMES: Record<string, string> = {
   "eu-ai-act": "EU AI Act",
@@ -79,11 +78,9 @@ const FRAMEWORK_NAMES: Record<string, string> = {
   "nist-ai-rmf": "NIST AI RMF",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 function fmtDay(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split("-");
-  return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`;
+  return `${Number(d)} ${L.months[Number(m) - 1]} ${y}`;
 }
 
 function pct(n: number): string {
@@ -126,10 +123,10 @@ interface Gap {
 function coverageNumbers(a: AssertionResult): string | undefined {
   const i = a.derivation.intermediates;
   if (typeof i.populated === "number" && typeof i.total === "number") {
-    return `${i.populated} of ${i.total}`;
+    return `${i.populated} ${L.of} ${i.total}`;
   }
   if (typeof i.numerator === "number" && typeof i.denominator === "number") {
-    return `${i.numerator} of ${i.denominator}`;
+    return `${i.numerator} ${L.of} ${i.denominator}`;
   }
   return undefined;
 }
@@ -143,19 +140,21 @@ function statusSentence(c: ControlResult): string {
   const value = worst.derivation.intermediates.value;
   switch (c.verdict) {
     case "evidenced":
-      return "Backed by runtime evidence for the whole period.";
+      return L.status_evidenced;
     case "partially_evidenced":
-      return `Holds for most of the system${nums ? ` (${nums}${typeof value === "number" ? `, ${pct(value)}` : ""})` : ""}, one gap short of fully counting.`;
+      return t(L, "status_partial", {
+        nums: nums ? ` (${nums}${typeof value === "number" ? `, ${pct(value)}` : ""})` : "",
+      });
     case "not_evidenced":
-      return `The records this needs don't exist yet${nums ? ` (${nums} present)` : ""}.`;
+      return t(L, "status_not_evidenced", { nums: nums ? t(L, "nums_present", { nums }) : "" });
     case "contradicted":
-      return `The telemetry argues against this claim${nums ? ` (only ${nums} hold)` : ""} - resolve before anyone external sees it.`;
+      return t(L, "status_contradicted", { nums: nums ? t(L, "nums_only_hold", { nums }) : "" });
     case "unevaluable":
       return worst.source_class === "declared"
-        ? "Telemetry can't see this one; it needs a signed statement from a named owner."
+        ? L.status_unevaluable_declared
         : worst.source_class === "configured"
-          ? "Telemetry can't see this one; it's verified from configuration."
-          : "The telemetry can't answer this yet - an instrumentation gap, not necessarily a control gap.";
+          ? L.status_unevaluable_configured
+          : L.status_unevaluable;
   }
 }
 
@@ -170,26 +169,26 @@ function gapActions(controls: ControlResult[]): Gap[] {
       let kind: string;
       const nums = coverageNumbers(a);
       if (a.verdict === "unevaluable" && a.source_class === "declared") {
-        kind = "Sign-off";
-        action = `Have a named owner sign the declaration for “${control.title.toLowerCase()}”. No engineering work involved.`;
+        kind = "signoff";
+        action = t(L, "action_signoff", { title: ctitle(control).toLowerCase() });
       } else if (a.verdict === "unevaluable" && a.source_class === "configured") {
-        kind = "Configuration";
-        action = `Verify this from configuration for “${control.title.toLowerCase()}”; it is not observable from traces.`;
+        kind = "configuration";
+        action = t(L, "action_configured", { title: ctitle(control).toLowerCase() });
       } else if (a.verdict === "unevaluable") {
-        kind = "Instrumentation";
-        action = a.unevaluable_reason ?? "The telemetry cannot answer this; extend instrumentation.";
+        kind = "instrumentation";
+        action = a.unevaluable_reason ?? L.action_unevaluable_fallback;
       } else if (a.capability === "content_integrity") {
-        kind = "Instrumentation";
-        action = `Enable content capture on the emitter${nums ? ` - ${nums} model calls carry digests today` : ""}. Content is digest-hashed on the way through; nothing is stored.`;
+        kind = "instrumentation";
+        action = t(L, "action_content", { today: nums ? t(L, "action_content_today", { nums }) : "" });
       } else if (a.capability === "token_accounting") {
-        kind = "Instrumentation";
-        action = `Emit token usage attributes on model calls${nums ? ` - ${nums} carry them today` : ""}.`;
+        kind = "instrumentation";
+        action = t(L, "action_tokens", { today: nums ? t(L, "action_tokens_today", { nums }) : "" });
       } else if (a.derivation.expression.includes("linked(AgentRun)")) {
-        kind = "Instrumentation";
-        action = `Some model calls happen outside any identified agent${nums ? ` (${nums} are attributable)` : ""}. Instrument the service making them, or they stay unattributable to an auditor.`;
+        kind = "instrumentation";
+        action = t(L, "action_unattributed", { nums: nums ? t(L, "action_unattributed_nums", { nums }) : "" });
       } else {
-        kind = "Instrumentation";
-        action = `Close the gap on “${a.description}”${nums ? ` - currently ${nums}` : ""}.`;
+        kind = "instrumentation";
+        action = t(L, "action_generic", { description: a.description, nums: nums ? t(L, "action_generic_nums", { nums }) : "" });
       }
       gaps.push({ control, assertion: a, action, kind });
     }
@@ -234,18 +233,20 @@ function glanceSection(batch: NormalizedBatch, evaluations: FrameworkEvaluation[
   const limits = batch.completeness.capabilities.filter((c) => c.status !== "available");
   const dq =
     limits.length > 0 || batch.counts.spans_unmapped > 0
-      ? `<p class="dq-note">Honesty first: this report saw ${pct(batch.completeness.mapped_ratio)} of the telemetry it was given${
-          limits.length > 0 ? `, and ${limits.length} evidence categor${limits.length === 1 ? "y is" : "ies are"} limited` : ""
-        }. Anything the telemetry could not see is marked, never assumed. Details in <a href="#data-quality">Data quality</a>.</p>`
+      ? `<p class="dq-note">${esc(t(L, "dq_note_start", { pct: pct(batch.completeness.mapped_ratio) }))}${
+          limits.length > 0
+            ? esc(t(L, limits.length === 1 ? "dq_note_limited_one" : "dq_note_limited_other", { n: limits.length }))
+            : ""
+        }${esc(L.dq_note_end)} <a href="#data-quality">${esc(L.dq_note_link)}</a>.</p>`
       : "";
 
   return `<section class="glance">
-    <h2>Where you stand</h2>
-    <p class="big">Against the ${esc(frameworks)}, you can cite runtime evidence for
-      <b class="v-evidenced">${ready} of ${total}</b> controls today.
-      ${partial > 0 ? `<b class="v-partially_evidenced">${partial}</b> ${partial === 1 ? "is" : "are"} nearly there,` : ""}
-      ${missing > 0 ? `<b class="v-not_evidenced">${missing}</b> ${missing === 1 ? "needs" : "need"} work,` : ""}
-      ${input > 0 ? `and <b class="v-unevaluable">${input}</b> need${input === 1 ? "s" : ""} input telemetry can't provide.` : ""}
+    <h2>${esc(L.glance_title)}</h2>
+    <p class="big">${esc(t(L, "glance_main", { frameworks, ready: String(ready), total: String(total) }))
+      .replace(`${ready}`, `<b class="v-evidenced">${ready}</b>`)}
+      ${partial > 0 ? `<span>${esc(t(L, partial === 1 ? "glance_partial_one" : "glance_partial_other", { n: partial })).replace(String(partial), `<b class="v-partially_evidenced">${partial}</b>`)}</span>` : ""}
+      ${missing > 0 ? `<span>${esc(t(L, missing === 1 ? "glance_missing_one" : "glance_missing_other", { n: missing })).replace(String(missing), `<b class="v-not_evidenced">${missing}</b>`)}</span>` : ""}
+      ${input > 0 ? `<span>${esc(t(L, input === 1 ? "glance_input_one" : "glance_input_other", { n: input })).replace(String(input), `<b class="v-unevaluable">${input}</b>`)}</span>` : ""}
     </p>
     ${dq}
   </section>`;
@@ -258,10 +259,10 @@ function checklistSection(evaluations: FrameworkEvaluation[]): string {
         (c) => `<a class="row" href="#${esc(c.control_id)}">
           <span class="flag v-${c.verdict}">${FLAG[c.verdict]}</span>
           <span class="row-body">
-            <span class="row-title">${esc(c.title)}${c.article ? ` <span class="row-article">${esc(c.article)}</span>` : ""}</span>
+            <span class="row-title">${esc(ctitle(c))}${c.article ? ` <span class="row-article">${esc(c.article)}</span>` : ""}</span>
             <span class="row-status">${esc(statusSentence(c))}</span>
           </span>
-          <span class="row-verdict v-${c.verdict}">${esc(PLAIN[c.verdict])}</span>
+          <span class="row-verdict v-${c.verdict}">${esc(plain(c.verdict))}</span>
         </a>`,
       )
       .join("");
@@ -269,7 +270,7 @@ function checklistSection(evaluations: FrameworkEvaluation[]): string {
   return evaluations
     .map(
       (ev) => `<section>
-        <h2>The checklist <span class="dim">· ${esc(FRAMEWORK_NAMES[ev.framework] ?? ev.framework)}</span></h2>
+        <h2>${esc(L.checklist_title)} <span class="dim">· ${esc(FRAMEWORK_NAMES[ev.framework] ?? ev.framework)}</span></h2>
         <div class="checklist">${rows(ev)}</div>
       </section>`,
     )
@@ -279,14 +280,19 @@ function checklistSection(evaluations: FrameworkEvaluation[]): string {
 function actionsSection(evaluations: FrameworkEvaluation[]): string {
   const gaps = gapActions(evaluations.flatMap((e) => e.controls));
   if (gaps.length === 0) {
-    return `<section><h2>What to do next</h2><p class="lede">Nothing. Every control in scope is backed by runtime evidence. Seal the period and share it.</p></section>`;
+    return `<section><h2>${esc(L.actions_title)}</h2><p class="lede">${esc(L.actions_none)}</p></section>`;
   }
-  const KIND_NOTE: Record<string, string> = {
-    Instrumentation: "engineering work: emit or enrich telemetry",
-    Configuration: "verify a setting; not observable from traces",
-    "Sign-off": "a named owner signs a declaration; no engineering work",
+  const KIND_LABEL: Record<string, string> = {
+    instrumentation: L.kind_instrumentation,
+    configuration: L.kind_configuration,
+    signoff: L.kind_signoff,
   };
-  const order = ["Instrumentation", "Configuration", "Sign-off"];
+  const KIND_NOTE: Record<string, string> = {
+    instrumentation: L.kind_note_instrumentation,
+    configuration: L.kind_note_configuration,
+    signoff: L.kind_note_signoff,
+  };
+  const order = ["instrumentation", "configuration", "signoff"];
   const groups = order
     .map((kind) => ({ kind, items: gaps.filter((g) => g.kind === kind) }))
     .filter((g) => g.items.length > 0);
@@ -294,13 +300,13 @@ function actionsSection(evaluations: FrameworkEvaluation[]): string {
     .map(
       (group) => `<div class="action-group">
         <div class="action-head">
-          <span>${esc(group.kind)}</span>
+          <span>${esc(KIND_LABEL[group.kind] ?? group.kind)}</span>
           <span class="dim">${esc(KIND_NOTE[group.kind] ?? "")} · ${group.items.length}</span>
         </div>
         ${group.items
           .map(
             (g) => `<div class="action">
-          <div class="action-title">${esc(g.control.title)}</div>
+          <div class="action-title">${esc(ctitle(g.control))}</div>
           <div class="action-id">${esc(g.control.control_id)}</div>
           <p class="action-step">${esc(g.action)}</p>
         </div>`,
@@ -310,8 +316,8 @@ function actionsSection(evaluations: FrameworkEvaluation[]): string {
     )
     .join("");
   return `<section>
-    <h2>What to do next</h2>
-    <p class="lede">Each open box above, turned into its next concrete step, grouped by the kind of work it takes.</p>
+    <h2>${esc(L.actions_title)}</h2>
+    <p class="lede">${esc(L.actions_lede)}</p>
     ${blocks}
   </section>`;
 }
@@ -341,30 +347,30 @@ function assertionBlock(a: AssertionResult): string {
 
   return `<div class="assertion">
     <div class="a-head">
-      <span class="verdict v-${a.verdict}">${FLAG[a.verdict]} ${VERDICT_LABEL[a.verdict]}</span>
-      <span class="sc sc-${a.source_class}">${SOURCE_LABEL[a.source_class]}</span>
+      <span class="verdict v-${a.verdict}">${FLAG[a.verdict]} ${esc(verdictLabel(a.verdict))} <span class="canon">${esc(a.verdict)}</span></span>
+      <span class="sc sc-${a.source_class}">${esc(sourceLabel(a.source_class))}</span>
       <span class="mono dim">${esc(a.assertion_id)}</span>
     </div>
     <p>${esc(a.description)}</p>
-    ${a.unevaluable_reason ? `<p class="reason">Why unevaluable: ${esc(a.unevaluable_reason)}</p>` : ""}
+    ${a.unevaluable_reason ? `<p class="reason">${esc(L.why_unevaluable)} ${esc(a.unevaluable_reason)}</p>` : ""}
     <details>
-      <summary>How this was derived</summary>
+      <summary>${esc(L.how_derived)}</summary>
       <div class="derivation">
         <div class="mono expr">${esc(d.expression)}</div>
         <table>
           <tbody>
-            <tr><td>outcome</td><td class="mono">${esc(d.outcome)}</td></tr>
-            ${d.comparator ? `<tr><td>threshold</td><td class="mono">${esc(d.comparator.op)} ${esc(d.comparator.value)}</td></tr>` : ""}
+            <tr><td>${esc(L.th_outcome)}</td><td class="mono">${esc(d.outcome)}</td></tr>
+            ${d.comparator ? `<tr><td>${esc(L.th_threshold)}</td><td class="mono">${esc(d.comparator.op)} ${esc(d.comparator.value)}</td></tr>` : ""}
             ${intermediates}
           </tbody>
         </table>
         ${
           consulted !== ""
             ? `<table>
-                <thead><tr><th>Events consulted</th><th>Total</th><th>Sample (span ids)</th></tr></thead>
+                <thead><tr><th>${esc(L.th_events_consulted)}</th><th>${esc(L.th_total)}</th><th>${esc(L.th_sample)}</th></tr></thead>
                 <tbody>${consulted}</tbody>
               </table>`
-            : `<p class="dim">No events were consulted; no evidence source exists for this assertion yet.</p>`
+            : `<p class="dim">${esc(L.no_events_consulted)}</p>`
         }
         ${evidence}
       </div>
@@ -377,11 +383,11 @@ function controlCard(c: ControlResult): string {
     <div class="c-head">
       <div>
         <span class="mono dim">${esc(c.control_id)}${c.article ? ` · ${esc(c.article)}` : ""}</span>
-        <h3>${esc(c.title)}</h3>
+        <h3>${esc(ctitle(c))}</h3>
       </div>
-      <span class="verdict v-${c.verdict}">${FLAG[c.verdict]} ${VERDICT_LABEL[c.verdict]}</span>
+      <span class="verdict v-${c.verdict}">${FLAG[c.verdict]} ${esc(verdictLabel(c.verdict))} <span class="canon">${esc(c.verdict)}</span></span>
     </div>
-    <p class="dim">${esc(c.requirement_summary)}</p>
+    <p class="dim">${esc(csummary(c))}</p>
     ${c.assertions.map(assertionBlock).join("")}
   </article>`;
 }
@@ -390,8 +396,8 @@ function detailSection(evaluations: FrameworkEvaluation[]): string {
   return evaluations
     .map(
       (ev) => `<section>
-        <h2>The evidence, control by control <span class="dim">· ${esc(FRAMEWORK_NAMES[ev.framework] ?? ev.framework)} (${esc(ev.framework_version)})</span></h2>
-        <p class="lede">For the reviewer who wants to check the working. Every verdict expands into its derivation: the rule applied, the threshold, and the exact events consulted.</p>
+        <h2>${esc(L.detail_title)} <span class="dim">· ${esc(FRAMEWORK_NAMES[ev.framework] ?? ev.framework)} (${esc(ev.framework_version)})</span></h2>
+        <p class="lede">${esc(L.detail_lede)}</p>
         <p class="mono dim pin">crosswalk ${esc(ev.crosswalk_version)} · pinned ${esc(ev.crosswalk_pin)} · event schema ${esc(ev.event_schema_version)}</p>
         ${ev.controls.map(controlCard).join("")}
       </section>`,
@@ -516,7 +522,7 @@ function activitySection(batch: NormalizedBatch): string {
     return `<details class="run">
       <summary>
         <span class="mono dim">${esc(fmtDay(run.start))} ${esc(run.start.slice(11, 19))}</span>
-        <b>${run.agents.length > 0 ? run.agents.map(esc).join(", ") : '<span class="dim">no agent span</span>'}</b>
+        <b>${run.agents.length > 0 ? run.agents.map(esc).join(", ") : `<span class="dim">${esc(L.no_agent_span)}</span>`}</b>
         <span class="dim">${chips}</span>
         <span class="mono dim">run ${esc(run.run_id.slice(0, 12))}…</span>
       </summary>
@@ -525,12 +531,12 @@ function activitySection(batch: NormalizedBatch): string {
   });
 
   return `<section id="activity">
-    <h2>Activity log</h2>
-    <p class="lede">Every run in the period, one row each - open a row to see what the agent actually did, event by event. Metadata only: models, tools, decisions and timings appear; prompts and payloads exist here only as digests. Span ids cross-reference the derivations above.</p>
+    <h2>${esc(L.activity_title)}</h2>
+    <p class="lede">${esc(L.activity_lede)}</p>
     <div class="runlog">${rows.join("")}</div>
     ${
       runs.length > RUN_CAP
-        ? `<p class="dim">Showing ${RUN_CAP} of ${runs.length} runs. Every run is included in the JSON output and in the sealed bundle's event digests.</p>`
+        ? `<p class="dim">${esc(t(L, "showing_runs", { shown: RUN_CAP, total: runs.length }))}</p>`
         : ""
     }
   </section>`;
@@ -558,27 +564,27 @@ function dataQualitySection(batch: NormalizedBatch): string {
     .join("");
 
   return `<section id="data-quality">
-    <h2>Data quality</h2>
-    <p class="lede">What the telemetry could and could not see. A verdict above is only ever as good as this section, which is why nothing here is hidden.</p>
+    <h2>${esc(L.dq_title)}</h2>
+    <p class="lede">${esc(L.dq_lede)}</p>
     <div class="statline mono">
-      <span>${counts.spans_seen.toLocaleString("en-US")} spans seen</span>
-      <span>${counts.spans_mapped.toLocaleString("en-US")} mapped (${pct(completeness.mapped_ratio)})</span>
-      <span>${counts.spans_unmapped.toLocaleString("en-US")} unmapped</span>
-      <span>generations: ${esc(detections.map((d) => `${d.generation} (${d.confidence})`).join(", ") || "none")}</span>
-      ${conflicts.length > 0 ? `<span>${conflicts.length} span(s) carried mixed generations; resolved to the newest</span>` : ""}
+      <span>${esc(t(L, "dq_spans_seen", { n: counts.spans_seen.toLocaleString("en-US") }))}</span>
+      <span>${esc(t(L, "dq_spans_mapped", { n: counts.spans_mapped.toLocaleString("en-US"), pct: pct(completeness.mapped_ratio) }))}</span>
+      <span>${esc(t(L, "dq_spans_unmapped", { n: counts.spans_unmapped.toLocaleString("en-US") }))}</span>
+      <span>${esc(t(L, "dq_generations", { list: detections.map((d) => `${d.generation} (${d.confidence})`).join(", ") || "-" }))}</span>
+      ${conflicts.length > 0 ? `<span>${esc(t(L, "dq_conflicts", { n: conflicts.length }))}</span>` : ""}
     </div>
     <table>
-      <thead><tr><th>Evidence category</th><th>Status</th><th>Notes</th></tr></thead>
+      <thead><tr><th>${esc(L.th_category)}</th><th>${esc(L.th_status)}</th><th>${esc(L.th_notes)}</th></tr></thead>
       <tbody>${capRows}</tbody>
     </table>
     ${
       unmapped.length > 0
-        ? `<h3>Spans this report could not use</h3>
+        ? `<h3>${esc(L.dq_unusable_title)}</h3>
            <table>
-             <thead><tr><th>Span</th><th>Name</th><th>Reason</th></tr></thead>
+             <thead><tr><th>${esc(L.th_span)}</th><th>${esc(L.th_name)}</th><th>${esc(L.th_reason)}</th></tr></thead>
              <tbody>${unmappedRows}</tbody>
            </table>
-           ${unmapped.length > 20 ? `<p class="dim">…and ${unmapped.length - 20} more, enumerated in the JSON output.</p>` : ""}`
+           ${counts.spans_unmapped > 20 ? `<p class="dim">${esc(t(L, "dq_more", { n: counts.spans_unmapped - Math.min(unmapped.length, 20) }))}</p>` : ""}`
         : ""
     }
   </section>`;
@@ -588,11 +594,14 @@ function dataQualitySection(batch: NormalizedBatch): string {
 
 export function renderReport(input: ReportInput): string {
   const { batch, evaluations, meta } = input;
+  const lang: Lang = input.lang ?? "en";
+  L = LANGS[lang].catalog;
+  CT = input.controlTranslations ?? {};
   const { from, to } = period(batch);
   const inv = inventory(batch);
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -662,6 +671,8 @@ export function renderReport(input: ReportInput): string {
   .control { background: var(--doc); border: 1px solid var(--rule); padding: 20px 24px; margin-top: 14px; page-break-inside: avoid; }
   .c-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
   .verdict { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .canon { font-weight: 400; opacity: .55; text-transform: none; letter-spacing: 0; }
+  .lang-note { font-size: 12px; margin-top: 10px; }
   .assertion { border-top: 1px solid var(--rule-faint); margin-top: 14px; padding-top: 12px; }
   .a-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; margin-bottom: 4px; }
   .sc { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--rule); padding: 2px 8px; }
@@ -693,13 +704,14 @@ export function renderReport(input: ReportInput): string {
   <header class="doc">
     <h1>AGENT TRUST REPORT</h1>
     <dl class="meta">
-      <div><dt>Subject</dt><dd>${esc(meta.subject)}</dd></div>
-      <div><dt>Period</dt><dd>${from && to ? `${esc(fmtDay(from))} → ${esc(fmtDay(to))}` : "no events in period"}</dd></div>
-      <div><dt>Source</dt><dd class="mono">${batch.source.files.map(esc).join(", ") || " - "} (${esc(batch.source.format)})</dd></div>
-      <div><dt>Versions</dt><dd class="mono">proofbook ${esc(meta.tool_version)} · event schema ${esc(batch.schema_version)}</dd></div>
-      ${meta.generated_at ? `<div><dt>Generated</dt><dd class="mono">${esc(meta.generated_at)}</dd></div>` : ""}
-      <div><dt>Standing</dt><dd>Unsigned rendering. The verifiable artifact is a sealed bundle.</dd></div>
+      <div><dt>${esc(L.meta_subject)}</dt><dd>${esc(meta.subject)}</dd></div>
+      <div><dt>${esc(L.meta_period)}</dt><dd>${from && to ? `${esc(fmtDay(from))} → ${esc(fmtDay(to))}` : esc(L.no_events_in_period)}</dd></div>
+      <div><dt>${esc(L.meta_source)}</dt><dd class="mono">${batch.source.files.map(esc).join(", ") || " - "} (${esc(batch.source.format)})</dd></div>
+      <div><dt>${esc(L.meta_versions)}</dt><dd class="mono">proofbook ${esc(meta.tool_version)} · event schema ${esc(batch.schema_version)}</dd></div>
+      ${meta.generated_at ? `<div><dt>${esc(L.meta_generated)}</dt><dd class="mono">${esc(meta.generated_at)}</dd></div>` : ""}
+      <div><dt>${esc(L.meta_standing)}</dt><dd>${esc(L.standing_text)}</dd></div>
     </dl>
+    ${lang !== "en" ? `<p class="lang-note dim">${esc(t(L, "language_note", { language: LANGS[lang].name }))}</p>` : ""}
   </header>
 
   ${glanceSection(batch, evaluations)}
@@ -710,27 +722,27 @@ export function renderReport(input: ReportInput): string {
   ${dataQualitySection(batch)}
 
   <section>
-    <h2>Scope and inventory</h2>
-    <p class="lede">This report covers exactly what the telemetry could see. Services that were never instrumented do not appear here and are not covered by any verdict above.</p>
+    <h2>${esc(L.scope_title)}</h2>
+    <p class="lede">${esc(L.scope_lede)}</p>
     <ul class="inv">
-      <li><b>Agents</b> - ${inv.agents.length > 0 ? inv.agents.map(esc).join(", ") : "none observed"}</li>
-      <li><b>Models</b> - ${inv.models.length > 0 ? inv.models.map(esc).join(", ") : "none observed"}</li>
-      <li><b>Tools</b> - ${inv.tools.length > 0 ? inv.tools.map(esc).join(", ") : "none observed"}</li>
-      <li><b>Runs</b> - ${new Set(
+      <li><b>${esc(L.inv_agents)}</b> - ${inv.agents.length > 0 ? inv.agents.map(esc).join(", ") : esc(L.none_observed)}</li>
+      <li><b>${esc(L.inv_models)}</b> - ${inv.models.length > 0 ? inv.models.map(esc).join(", ") : esc(L.none_observed)}</li>
+      <li><b>${esc(L.inv_tools)}</b> - ${inv.tools.length > 0 ? inv.tools.map(esc).join(", ") : esc(L.none_observed)}</li>
+      <li><b>${esc(L.inv_runs)}</b> - ${esc(t(L, "traces_evaluated", { n: new Set(
         Object.values(batch.events).flatMap((l) => (l as Array<{ run_id: string }>).map((e) => e.run_id)),
-      ).size} trace(s) evaluated</li>
+      ).size }))}</li>
     </ul>
   </section>
 
   <section>
-    <h2>Verification</h2>
-    <p class="lede">This HTML file is a rendering for people. To hand a third party something they can verify without trusting the producer, seal the period into a signed bundle and share that:</p>
+    <h2>${esc(L.verification_title)}</h2>
+    <p class="lede">${esc(L.verification_lede)}</p>
     <p class="mono">proof seal --period &lt;period&gt; &nbsp;·&nbsp; proofbook verify &lt;bundle&gt;</p>
-    <p class="dim">A sealed bundle binds these verdicts to the exact crosswalk text (pinned in the evidence section by content hash), the event schema version, and the producing identity, and verifies offline against a published specification.</p>
+    <p class="dim">${esc(L.verification_note)}</p>
   </section>
 
   <footer>
-    Produced by Proofbook. Verdicts derive from telemetry; a runtime check supports a control and never satisfies a legal obligation on its own. Content is digest-referenced throughout; no prompt, completion or tool payload appears in this document.
+    ${esc(L.footer_text)}
   </footer>
 </main>
 </body>

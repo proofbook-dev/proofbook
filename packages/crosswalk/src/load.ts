@@ -117,3 +117,24 @@ export async function loadEquivalence(
   }
   return doc;
 }
+
+/**
+ * Reviewed control-text translations: control_id → { title,
+ * requirement_summary }. Presentation only; the sealed bundle keeps the
+ * canonical English paraphrases, and a missing translation falls back
+ * to them rather than to anything generated.
+ */
+export async function loadControlTranslations(
+  lang: string,
+  dir?: string,
+): Promise<Record<string, { title?: string; requirement_summary?: string }>> {
+  if (lang === "en") return {};
+  const base = dir ?? defaultCrosswalkDir;
+  try {
+    const text = await readFile(join(base, "i18n", `${lang}.yaml`), "utf8");
+    const parsed = parseYaml(text) as Record<string, { title?: string; requirement_summary?: string }>;
+    return parsed ?? {};
+  } catch {
+    return {};
+  }
+}

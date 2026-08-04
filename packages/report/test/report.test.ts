@@ -118,3 +118,34 @@ describe("the activity log", () => {
     expect(html).toContain("token usage not emitted");
   });
 });
+
+describe("report languages", () => {
+  it("renders German with translated controls and canonical tokens intact", async () => {
+    const batch = await normalizeOtlpFiles([basic]);
+    const frameworks = await loadCrosswalkDir();
+    const { loadControlTranslations } = await import("@proofbook/crosswalk");
+    const html = renderReport({
+      batch,
+      evaluations: [evaluateFramework(batch, frameworks.get("eu-ai-act")!)],
+      meta: { subject: "acme", tool_version: "0.0.0" },
+      lang: "de",
+      controlTranslations: await loadControlTranslations("de"),
+    });
+    expect(html).toContain('lang="de"');
+    expect(html).toContain("Wo Sie stehen");
+    expect(html).toContain("Automatische Ereignisaufzeichnung");
+    // Sealed vocabulary stays canonical beside the translation.
+    expect(html).toContain('class="canon">evidenced');
+    expect(html).not.toContain("Where you stand");
+  });
+
+  it("every catalog provides every key of the English reference", async () => {
+    const { LANGS } = await import("../src/i18n/index.js");
+    const en = LANGS.en.catalog as Record<string, unknown>;
+    for (const [code, { catalog }] of Object.entries(LANGS)) {
+      for (const key of Object.keys(en)) {
+        expect((catalog as Record<string, unknown>)[key], `${code}.${key}`).toBeDefined();
+      }
+    }
+  });
+});

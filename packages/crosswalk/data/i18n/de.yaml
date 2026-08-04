@@ -1,0 +1,158 @@
+# Übersetzungen der Kontrolltitel und Anforderungszusammenfassungen.
+# Proofbooks eigene Paraphrasen, übersetzt; nie der Verordnungstext.
+# Intern erstellt, zur muttersprachlichen Compliance-Prüfung markiert.
+# Maßgeblich bleiben die englischen Texte im versiegelten Bundle.
+
+eu-ai-act-a12-record:
+  title: Automatische Ereignisaufzeichnung über die gesamte Betriebsdauer
+  requirement_summary: >
+    Das System zeichnet Ereignisse während des Betriebs automatisch auf,
+    in einem Umfang, der die Nachvollziehbarkeit seiner Funktionsweise trägt.
+eu-ai-act-a12-period:
+  title: Der Zeitraum jeder Verwendung wird aufgezeichnet
+  requirement_summary: >
+    Die Aufzeichnung erfasst Beginn und Ende jedes Verwendungszeitraums,
+    sodass sich jede einzelne Verwendung zeitlich verorten lässt.
+eu-ai-act-a12-input:
+  title: Ein- und Ausgabedaten sind per Digest nachvollziehbar
+  requirement_summary: >
+    Die während der Verwendung ein- und ausgehenden Daten lassen sich
+    identifizieren und auf Integrität prüfen, ohne dass der Inhalt selbst
+    im Nachweisdatensatz verbleibt.
+eu-ai-act-a12-attribution:
+  title: Aufgezeichnete Ereignisse sind einer Agentenidentität zuordenbar
+  requirement_summary: >
+    Aufgezeichnete Aktivität lässt sich dem konkreten Agenten zuordnen, der
+    sie ausgeführt hat; Aktivität nicht identifizierter Agenten untergräbt
+    die Nachvollziehbarkeit der Aufzeichnung.
+eu-ai-act-a12-anomalies:
+  title: Betriebsanomalien werden mit Art und Zeitpunkt aufgezeichnet
+  requirement_summary: >
+    Fällt der Betrieb aus oder verschlechtert er sich, wird der Fehler selbst
+    in einer Form aufgezeichnet, die die spätere Erkennung von Risikolagen trägt.
+eu-ai-act-a12-tools:
+  title: Externe Handlungen des Systems werden aufgezeichnet
+  requirement_summary: >
+    Handlungen des Systems gegenüber externen Tools und Diensten werden mit
+    der Identität des Ziels und dem Ergebnis aufgezeichnet.
+eu-ai-act-a13-instructions:
+  title: Betreiber erhalten eine Betriebsanleitung
+  requirement_summary: >
+    Dem System liegt eine Anleitung bei, die es einem Betreiber erlaubt, es
+    sachgerecht zu betreiben und seine Ausgaben zu interpretieren. Ein von
+    Menschen gepflegtes Dokument; Telemetrie kann es nicht beobachten.
+eu-ai-act-a13-limitations:
+  title: Fähigkeiten und Grenzen werden kommuniziert
+  requirement_summary: >
+    Betreiber erfahren, was das System kann und was nicht, einschließlich
+    bekannter Fehlermodi und der Umstände, die die Leistung mindern.
+eu-ai-act-a14-checkpoints:
+  title: Menschliche Aufsicht wird im Betrieb ausgeübt und aufgezeichnet
+  requirement_summary: >
+    Aufsicht ist nicht nur vorgesehen, sondern gelebt: menschliche
+    Kontrollpunkte (Freigabe, Prüfung, Übersteuerung, Abbruch) treten im
+    realen Betrieb auf und werden mit Art und Entscheidung aufgezeichnet.
+eu-ai-act-a14-actors:
+  title: Aufsichtsentscheidungen sind einer Person zuordenbar
+  requirement_summary: >
+    Jede aufgezeichnete menschliche Entscheidung trägt einen Verweis auf die
+    entscheidende Person, als Identitäts-Digest statt der Identität selbst.
+eu-ai-act-a15-robustness:
+  title: Ausfälle sind im Betrieb sichtbar, Robustheit wird getestet
+  requirement_summary: >
+    Widerstandsfähigkeit hat zwei Hälften: Ausfälle im Betrieb werden in
+    prüfbarer Form erfasst, und Genauigkeit wie Robustheit werden vor und
+    während des Einsatzes getestet. Ersteres ist beobachtbar; Letzteres ist
+    eine Testpraxis, die eine benannte Person bestätigt.
+eu-ai-act-a50-disclosure:
+  title: Personen werden über die Interaktion mit einem KI-System informiert
+  requirement_summary: >
+    Natürliche Personen, die mit dem System interagieren, werden darüber
+    informiert, sofern es sich nicht aus dem Kontext ergibt. Laufzeittelemetrie
+    kann nicht beobachten, was einer Person angezeigt wurde; dies ist die
+    Erklärung einer benannten Person.
+eu-ai-act-a50-marking:
+  title: Synthetische Inhalte werden maschinenlesbar gekennzeichnet
+  requirement_summary: >
+    Erzeugte Audio-, Bild-, Video- oder Textausgaben werden maschinenlesbar
+    als künstlich erzeugt gekennzeichnet. Aus der Konfiguration der
+    Ausgabepipeline verifizierbar, nicht aus Traces.
+iso-42001-a6.2.6-operation:
+  title: Betrieb und Überwachung des KI-Systems
+  requirement_summary: >
+    Die Organisation überwacht das KI-System im Betrieb, in einem Umfang,
+    der jede Ausführung und ihre externen Handlungen sichtbar macht.
+iso-42001-a6.2.8-event-logs:
+  title: Aufzeichnung von Ereignisprotokollen im Betrieb
+  requirement_summary: >
+    Ereignisse im Betrieb werden automatisch aufgezeichnet, einschließlich
+    Ausfällen, sodass eine spätere Analyse von Vorfällen möglich ist.
+iso-42001-a6.2.4-validation:
+  title: Verifizierung und Validierung des KI-Systems
+  requirement_summary: >
+    Die Organisation kann feststellen, welche Modelle Produktionsarbeit
+    verarbeitet haben, und hält dazu Verifizierungs- und Validierungsnachweise vor.
+iso-42001-a7.5-data-provenance:
+  title: Herkunft der Daten durch das System hindurch
+  requirement_summary: >
+    Ein- und Ausgaben sind per Digest nachvollziehbar, sodass jedes
+    aufgezeichnete Element später dem exakten Inhalt zugeordnet werden kann,
+    der es erzeugt hat.
+iso-42001-a4-resources:
+  title: Ressourcen des KI-Systems werden bilanziert
+  requirement_summary: >
+    Der Rechenverbrauch des KI-Systems wird je Modellaufruf quantifiziert und
+    trägt so die Ressourcendokumentation.
+iso-42001-a9.4-oversight:
+  title: Menschliche Aufsicht in der bestimmungsgemäßen Verwendung
+  requirement_summary: >
+    Menschliche Eingriffspunkte bestehen im Betrieb und werden genutzt; Art
+    und Entscheidung jedes Eingriffs werden aufgezeichnet.
+iso-42001-a8.2-documentation:
+  title: Systemdokumentation und Informationen für Nutzende
+  requirement_summary: >
+    Dokumentation über das KI-System steht den Menschen zur Verfügung, die es
+    nutzen und von ihm betroffen sind.
+iso-42001-a8.3-external-reporting:
+  title: Fähigkeiten und Grenzen werden extern kommuniziert
+  requirement_summary: >
+    Interessierte Parteien können erfahren, was das System kann und was
+    nicht, und wie sie Bedenken melden.
+nist-ai-rmf-measure-2.7:
+  title: Das KI-System wird im Betrieb überwacht
+  requirement_summary: >
+    Die Funktionsweise des Systems in Produktion wird verfolgt: jede
+    Ausführung wird mit Identität und Dauer aufgezeichnet, durchgehend über
+    den Zeitraum.
+nist-ai-rmf-measure-2.5:
+  title: Ausfälle sind sichtbar, Robustheit wird nachgewiesen
+  requirement_summary: >
+    Betriebsausfälle werden mit Art und Zeitpunkt aufgezeichnet, und
+    Robustheitstests werden von einer benannten Person dokumentiert.
+nist-ai-rmf-govern-3.2:
+  title: Rollen menschlicher Aufsicht sind definiert und werden ausgeübt
+  requirement_summary: >
+    Menschen greifen an definierten Punkten in den Systembetrieb ein, und
+    jeder Eingriff ist einer Person zuordenbar.
+nist-ai-rmf-map-inventory:
+  title: Die Produktionsmodelle werden aus der Laufzeit inventarisiert
+  requirement_summary: >
+    Welche Modelle und Anbieter Produktionsarbeit tatsächlich verarbeitet
+    haben, ergibt sich aus der Aufzeichnung, nicht aus einer gepflegten Liste.
+nist-ai-rmf-govern-accountability:
+  title: Systemhandlungen sind einer verantwortlichen Ausführung zuordenbar
+  requirement_summary: >
+    Modellaufrufe gehören zu identifizierten Agentenausführungen, und
+    Delegation zwischen Agenten wird aufgezeichnet, sodass die Verantwortung
+    für jede Handlung rückverfolgbar ist.
+nist-ai-rmf-manage-tools:
+  title: Dritt- und Tool-Interaktionen werden aus der Aufzeichnung gesteuert
+  requirement_summary: >
+    Die Interaktionen des Systems mit externen Tools werden mit Identität und
+    Ergebnis aufgezeichnet, sodass Tool-Risiken an dem gesteuert werden, was
+    tatsächlich lief.
+nist-ai-rmf-govern-policies:
+  title: Eine Richtlinie zum KI-Risikomanagement besteht
+  requirement_summary: >
+    Eine Richtlinie für KI-Risiken existiert, hat eine verantwortliche Person
+    und ist aktuell.

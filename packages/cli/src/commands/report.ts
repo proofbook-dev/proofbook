@@ -1,7 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { NormalizeError } from "@proofbook/normalize";
-import { renderReport } from "@proofbook/report";
+import { isLang, LANGS, renderReport } from "@proofbook/report";
+import { loadControlTranslations } from "@proofbook/crosswalk";
 import { discoverTraces } from "../discover.js";
 import { defaultSubject, runPipeline, summaryLine } from "../pipeline.js";
 import { capabilityImpacts, coverageBlock, discoveryBlock, gapParagraph } from "../transcript.js";
@@ -14,6 +15,7 @@ export interface ReportOptions {
   subject?: string | undefined;
   frameworks?: string[] | undefined;
   json?: boolean | undefined;
+  lang?: string | undefined;
   log: Log;
 }
 
@@ -53,6 +55,16 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
     log("");
   }
 
+  const langInput = opts.lang ?? "en";
+  if (!isLang(langInput)) {
+    opts.log(
+      `Unknown report language "${langInput}". Available: ${Object.entries(LANGS)
+        .map(([code, l]) => `${code} (${l.name})`)
+        .join(", ")}.`,
+    );
+    return 1;
+  }
+
   let result;
   try {
     result = await runPipeline(paths, opts.frameworks);
@@ -72,6 +84,8 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
       tool_version: "0.1.0",
       generated_at: new Date().toISOString(),
     },
+    lang: langInput,
+    controlTranslations: await loadControlTranslations(langInput),
   });
 
   const htmlPath = opts.out ?? join(cwd, "proofbook-report.html");
