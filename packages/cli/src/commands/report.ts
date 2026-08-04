@@ -77,9 +77,28 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
   const htmlPath = opts.out ?? join(cwd, "proofbook-report.html");
   const jsonPath = htmlPath.replace(/\.html$/, "") + ".json";
   await writeFile(htmlPath, html);
+  // The JSON companion carries the findings, not the raw event lists:
+  // at millions of events the full batch is a multi-gigabyte file
+  // nobody asked for. Events live in the (optional) sealed archive.
   await writeFile(
     jsonPath,
-    JSON.stringify({ batch: result.batch, evaluations: result.evaluations }, null, 2),
+    JSON.stringify(
+      {
+        batch: {
+          schema_version: result.batch.schema_version,
+          source: result.batch.source,
+          detections: result.batch.detections,
+          counts: result.batch.counts,
+          completeness: result.batch.completeness,
+          unmapped: result.batch.unmapped,
+          missing_fields: result.batch.missing_fields,
+          conflicts: result.batch.conflicts,
+        },
+        evaluations: result.evaluations,
+      },
+      null,
+      2,
+    ),
   );
 
   if (opts.json) {

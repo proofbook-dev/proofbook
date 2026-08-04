@@ -32,6 +32,13 @@ ed.etc.sha512Sync = (...msgs) => sha512(ed.etc.concatBytes(...msgs));
 export const BUNDLE_FORMAT_VERSION = "0.1.0";
 
 const SAMPLES_PER_TYPE = 5;
+/**
+ * Above this, evidence/events.merkle carries the root and count but
+ * not the leaf list: at millions of events the leaves alone would be
+ * hundreds of megabytes of bundle. The root stays committed, and every
+ * leaf is recomputable from the encrypted archive by its owner.
+ */
+const LEAF_INLINE_MAX = 20_000;
 
 export interface BundleInput {
   batch: NormalizedBatch;
@@ -139,7 +146,9 @@ export function buildBundle(input: BundleInput): UnsignedBundle {
       leaf: "sha256(event_type + '\\n' + canonical(event))",
       leaf_count: leaves.length,
       root: merkleRoot(leaves),
-      leaves,
+      ...(leaves.length <= LEAF_INLINE_MAX
+        ? { leaves }
+        : { leaves_inlined: false, note: "leaf list omitted at this scale; recomputable from the encrypted event archive" }),
     }),
   );
   files.set("evidence/samples.json", canonicalize(samples(batch)));

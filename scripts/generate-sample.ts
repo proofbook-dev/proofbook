@@ -12,7 +12,9 @@
  *
  *   pnpm dlx tsx scripts/generate-sample.ts [--traces 150] [--days 30] [--seed 42]
  */
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -192,13 +194,17 @@ function makeTrace(endMs: number): { service: string; spans: SpanSpec[] } {
 }
 
 const now = Date.now();
-const lines: string[] = [];
+await mkdir(join(root, "tmp"), { recursive: true });
+const out = join(root, "tmp", "sample-traces.jsonl");
+// Stream each trace as it is generated: accumulating millions of
+// lines (or joining them) is an OOM at realistic volumes.
+const stream = createWriteStream(out);
+let bytes = 0;
 for (let i = 0; i < TRACES; i += 1) {
   const endMs = now - rand() * DAYS * 86_400_000;
   const { service, spans } = makeTrace(endMs);
   const traceId = hex(32);
-  lines.push(
-    JSON.stringify({
+  const line = JSON.stringify({
       resourceSpans: [{
         resource: {
           attributes: [
@@ -222,11 +228,11 @@ for (let i = 0; i < TRACES; i += 1) {
           })),
         }],
       }],
-    }),
-  );
+    });
+  bytes += line.length + 1;
+  if (!stream.write(line + "\n")) await once(stream, "drain");
 }
 
-await mkdir(join(root, "tmp"), { recursive: true });
-const out = join(root, "tmp", "sample-traces.jsonl");
-await writeFile(out, lines.join("\n") + "\n");
-console.log(`wrote ${TRACES} traces (${lines.join("").length.toLocaleString("en-US")} bytes): ${out}`);
+stream.end();
+await once(stream, "finish");
+console.log(`wrote ${TRACES} traces (${bytes.toLocaleString("en-US")} bytes): ${out}`);

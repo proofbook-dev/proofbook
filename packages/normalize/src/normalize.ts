@@ -136,48 +136,30 @@ function applyMapping(mapping: Mapping, span: ParsedSpan): MappedResult {
  * a relationship between spans, not a property of one.
  */
 function deriveDelegations(
-  agentSpans: Map<string, { span: ParsedSpan; agentId: string }>,
-  spansById: Map<string, ParsedSpan>,
+  agentSpans: Map<
+    string,
+    { traceId: string; spanId: string; parentSpanId: string | undefined; startNano: bigint; agentId: string }
+  >,
+  parentById: Map<string, string | undefined>,
 ): Delegation[] {
   const out: Delegation[] = [];
-  for (const { span, agentId } of agentSpans.values()) {
-    let parentId = span.parentSpanId;
+  for (const entry of agentSpans.values()) {
+    let parentId = entry.parentSpanId;
     while (parentId) {
       const parentAgent = agentSpans.get(parentId);
       if (parentAgent) {
         out.push({
-          trace_id: span.traceId,
-          span_id: span.spanId,
-          run_id: span.traceId,
+          trace_id: entry.traceId,
+          span_id: entry.spanId,
+          run_id: entry.traceId,
           parent_agent: parentAgent.agentId,
-          child_agent: agentId,
-          at: nanoToIso(span.startNano),
+          child_agent: entry.agentId,
+          at: nanoToIso(entry.startNano),
         });
         break;
       }
-      parentId = spansById.get(parentId)?.parentSpanId;
+      parentId = parentById.get(parentId);
     }
-  }
-  return out;
-}
-
-function deriveErrors(spans: ParsedSpan[]): ErrorEvent[] {
-  const out: ErrorEvent[] = [];
-  for (const span of spans) {
-    if (span.statusCode !== "ERROR") continue;
-    const exception = span.events.find((e) => e.name === "exception");
-    const errorType =
-      (exception?.attrs["exception.type"] as string | undefined) ??
-      (span.statusMessage !== undefined && span.statusMessage !== ""
-        ? span.statusMessage
-        : "error");
-    out.push({
-      trace_id: span.traceId,
-      span_id: span.spanId,
-      run_id: span.traceId,
-      error_type: errorType,
-      at: nanoToIso(span.endNano > 0n ? span.endNano : span.startNano),
-    });
   }
   return out;
 }
@@ -234,16 +216,27 @@ function resolveSpan(span: ParsedSpan, rulesets: GenerationRules[]): SpanResolut
     : { matchedGenerations, failures };
 }
 
+/** Detail lists are samples past this size; the counts stay exact. */
+const DETAIL_SAMPLE_MAX = 500;
+/** Generation fingerprinting saturates long before this many spans. */
+const DETECTION_SAMPLE_MAX = 50_000;
+
 export function normalize({ spans, rulesets, files }: NormalizeInput): NormalizedBatch {
-  const detections = detectGenerations(spans, rulesets);
-  const best = detections[0];
-  if (spans.length > 0 && (!best || best.confidence < CONFIDENCE_FLOOR)) {
-    throw new NormalizeError(
-      `cannot identify telemetry generation (best: ${
-        best ? `"${best.generation}" at ${best.confidence}` : "none"
-      }). Refusing to guess: evidence derived from misread telemetry is worse than no evidence.`,
-    );
-  }
+  const machine = createNormalizer(rulesets, files);
+  for (const span of spans) machine.add(span);
+  return machine.finish();
+}
+
+/**
+ * The streaming normalizer: spans go in one at a time and are released
+ * immediately; only events, counters and a slim parent map stay. This
+ * is what lets an 8 GB month normalise in a few hundred MB of heap.
+ * Generation detection runs on the first DETECTION_SAMPLE_MAX spans
+ * (fingerprints saturate long before that) and gates finish(), not
+ * add(): a stream that turns out unreadable still refuses to guess.
+ */
+export function createNormalizer(rulesets: GenerationRules[], files: string[]) {
+  const detectionSample: ParsedSpan[] = [];
 
   const events: Events = {
     agent_runs: [],
@@ -258,21 +251,54 @@ export function normalize({ spans, rulesets, files }: NormalizeInput): Normalize
   const unmapped: UnmappedSpan[] = [];
   const missingFields: MissingField[] = [];
   const conflicts: SpanGenerationConflict[] = [];
-  const agentSpans = new Map<string, { span: ParsedSpan; agentId: string }>();
-  const spansById = new Map(spans.map((s) => [s.spanId, s]));
+  let unmappedCount = 0;
+  let missingFieldCount = 0;
+  let conflictCount = 0;
+  const agentSpans = new Map<
+    string,
+    { traceId: string; spanId: string; parentSpanId: string | undefined; startNano: bigint; agentId: string }
+  >();
+  // Parent chain only: holding every full span for delegation lookups
+  // is what runs multi-million-span batches out of memory.
+  const parentById = new Map<string, string | undefined>();
   let mappedCount = 0;
+  let spanCount = 0;
 
-  for (const span of spans) {
+  function add(span: ParsedSpan): void {
+    spanCount += 1;
+    if (detectionSample.length < DETECTION_SAMPLE_MAX) detectionSample.push(span);
+    parentById.set(span.spanId, span.parentSpanId);
+
+    // Errors, derived inline so the span can be released right after.
+    if (span.statusCode === "ERROR") {
+      const exception = span.events.find((e) => e.name === "exception");
+      const errorType =
+        (exception?.attrs["exception.type"] as string | undefined) ??
+        (span.statusMessage !== undefined && span.statusMessage !== ""
+          ? span.statusMessage
+          : "error");
+      events.errors.push({
+        trace_id: span.traceId,
+        span_id: span.spanId,
+        run_id: span.traceId,
+        error_type: errorType,
+        at: nanoToIso(span.endNano > 0n ? span.endNano : span.startNano),
+      });
+    }
+
     const resolution = resolveSpan(span, rulesets);
 
     if (resolution.matchedGenerations.length === 0) {
-      unmapped.push({
-        trace_id: span.traceId,
-        span_id: span.spanId,
-        name: span.name,
-        reason: "no mapping rule matched in any generation",
-      });
-      continue;
+      unmappedCount += 1;
+      if (unmapped.length < DETAIL_SAMPLE_MAX) {
+        unmapped.push({
+          trace_id: span.traceId,
+          span_id: span.spanId,
+          name: span.name,
+          reason: "no mapping rule matched in any generation",
+        });
+      }
+      return;
     }
 
     if (
@@ -280,24 +306,36 @@ export function normalize({ spans, rulesets, files }: NormalizeInput): Normalize
       resolution.generation &&
       !resolution.mapping?.shared
     ) {
-      conflicts.push({
-        trace_id: span.traceId,
-        span_id: span.spanId,
-        matched: resolution.matchedGenerations,
-        resolved_to: resolution.generation,
-      });
+      conflictCount += 1;
+      if (conflicts.length < DETAIL_SAMPLE_MAX) {
+        conflicts.push({
+          trace_id: span.traceId,
+          span_id: span.spanId,
+          matched: resolution.matchedGenerations,
+          resolved_to: resolution.generation,
+        });
+      }
     }
 
-    if (resolution.result) missingFields.push(...resolution.result.missing);
+    if (resolution.result) {
+      missingFieldCount += resolution.result.missing.length;
+      for (const field of resolution.result.missing) {
+        if (missingFields.length >= DETAIL_SAMPLE_MAX) break;
+        missingFields.push(field);
+      }
+    }
 
     if (!resolution.result?.event) {
-      unmapped.push({
-        trace_id: span.traceId,
-        span_id: span.spanId,
-        name: span.name,
-        reason: resolution.result?.failure ?? resolution.failures[0] ?? "mapping failed",
-      });
-      continue;
+      unmappedCount += 1;
+      if (unmapped.length < DETAIL_SAMPLE_MAX) {
+        unmapped.push({
+          trace_id: span.traceId,
+          span_id: span.spanId,
+          name: span.name,
+          reason: resolution.result?.failure ?? resolution.failures[0] ?? "mapping failed",
+        });
+      }
+      return;
     }
 
     mappedCount += 1;
@@ -306,7 +344,13 @@ export function normalize({ spans, rulesets, files }: NormalizeInput): Normalize
       case "AgentRun": {
         const run = resolution.result.event as unknown as AgentRun;
         events.agent_runs.push(run);
-        agentSpans.set(span.spanId, { span, agentId: run.agent_id });
+        agentSpans.set(span.spanId, {
+          traceId: span.traceId,
+          spanId: span.spanId,
+          parentSpanId: span.parentSpanId,
+          startNano: span.startNano,
+          agentId: run.agent_id,
+        });
         break;
       }
       case "ModelCall":
@@ -321,23 +365,44 @@ export function normalize({ spans, rulesets, files }: NormalizeInput): Normalize
     }
   }
 
-  events.delegations = deriveDelegations(agentSpans, spansById);
-  events.errors = deriveErrors(spans);
+  function finish(): NormalizedBatch {
+    const detections = detectGenerations(detectionSample, rulesets);
+    const best = detections[0];
+    if (spanCount > 0 && (!best || best.confidence < CONFIDENCE_FLOOR)) {
+      throw new NormalizeError(
+        `cannot identify telemetry generation (best: ${
+          best ? `"${best.generation}" at ${best.confidence}` : "none"
+        }). Refusing to guess: evidence derived from misread telemetry is worse than no evidence.`,
+      );
+    }
+
+    events.delegations = deriveDelegations(agentSpans, parentById);
+    // Chronological, deterministic order regardless of file order.
+    for (const list of Object.values(events) as Array<Array<Record<string, unknown>>>) {
+      list.sort((a, b) => {
+        const ta = (a.started_at ?? a.at) as string;
+        const tb = (b.started_at ?? b.at) as string;
+        return ta < tb ? -1 : ta > tb ? 1 : (a.span_id as string) < (b.span_id as string) ? -1 : 1;
+      });
+    }
 
   const batch: NormalizedBatch = {
     schema_version: EVENT_SCHEMA_VERSION,
     source: { format: "otlp-json", files: [...files].sort() },
     detections,
     counts: {
-      spans_seen: spans.length,
+      spans_seen: spanCount,
       spans_mapped: mappedCount,
-      spans_unmapped: unmapped.length,
+      spans_unmapped: unmappedCount,
     },
     events,
     unmapped,
     missing_fields: missingFields,
     conflicts,
-    completeness: scoreCompleteness(events, spans.length, mappedCount),
+    completeness: scoreCompleteness(events, spanCount, mappedCount),
   };
-  return NormalizedBatch.parse(batch);
+    return NormalizedBatch.parse(batch);
+  }
+
+  return { add, finish };
 }

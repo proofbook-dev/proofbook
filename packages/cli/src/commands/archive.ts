@@ -130,10 +130,12 @@ export async function archiveCommand(opts: ArchiveOptions): Promise<number> {
       const { matches, chunks_read, chunks_total } = extractFromArchive(bytes, key, queries);
 
       let leaves: Set<string> | null = null;
+      let leavesAbsent = false;
       if (opts.bundle) {
         const files = await readBundleDir(opts.bundle);
-        const merkle = JSON.parse(files.get("evidence/events.merkle")!) as { leaves: string[] };
-        leaves = new Set(merkle.leaves);
+        const merkle = JSON.parse(files.get("evidence/events.merkle")!) as { leaves?: string[] };
+        if (Array.isArray(merkle.leaves)) leaves = new Set(merkle.leaves);
+        else leavesAbsent = true;
       }
 
       const results = matches.map((m) => ({
@@ -154,6 +156,10 @@ export async function archiveCommand(opts: ArchiveOptions): Promise<number> {
       log(
         `${matches.length} match${matches.length === 1 ? "" : "es"} · decrypted ${chunks_read} of ${chunks_total} chunks`,
       );
+      if (leavesAbsent) {
+        log("bundle merkle leaves are not inlined at this scale; integrity holds via the");
+        log("archive digest chain instead (chunk digest → header → sealed manifest).");
+      }
       if (leaves && results.some((r) => "sealed" in r && r.sealed === "NOT in bundle merkle")) {
         log("⚠ some events did not verify against the bundle's sealed merkle tree.");
         return 2;

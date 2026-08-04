@@ -91,16 +91,27 @@ export function verifyBundleFiles(files: Map<string, string>): VerifyResult {
   const merkleText = files.get("evidence/events.merkle");
   if (merkleText !== undefined) {
     try {
-      const tree = JSON.parse(merkleText) as { root: string; leaves: string[]; leaf_count: number };
-      const recomputed = merkleRoot(tree.leaves);
-      const countOk = tree.leaves.length === tree.leaf_count;
-      push(
-        "events_merkle",
-        recomputed === tree.root && countOk,
-        recomputed === tree.root && countOk
-          ? `merkle root consistent over ${tree.leaf_count} event digest(s)`
-          : "merkle root does not match its leaves (tampered event digests)",
-      );
+      const tree = JSON.parse(merkleText) as { root: string; leaves?: string[]; leaf_count: number };
+      if (Array.isArray(tree.leaves)) {
+        const recomputed = merkleRoot(tree.leaves);
+        const countOk = tree.leaves.length === tree.leaf_count;
+        push(
+          "events_merkle",
+          recomputed === tree.root && countOk,
+          recomputed === tree.root && countOk
+            ? `merkle root consistent over ${tree.leaf_count} event digest(s)`
+            : "merkle root does not match its leaves (tampered event digests)",
+        );
+      } else {
+        // Large batches commit the root without inlining leaves. The
+        // file itself is covered by the manifest digest; stating the
+        // difference beats pretending to recompute.
+        push(
+          "events_merkle",
+          typeof tree.root === "string" && tree.root.length === 64 && tree.leaf_count > 0,
+          `root committed over ${tree.leaf_count} event digest(s); leaves not inlined at this scale`,
+        );
+      }
     } catch {
       push("events_merkle", false, "evidence/events.merkle is not valid JSON");
     }
