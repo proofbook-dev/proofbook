@@ -1,6 +1,6 @@
 {
   "name": "proofbook",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Evidence layer for agentic AI systems: turn OTLP agent traces into signed, independently verifiable audit evidence (EU AI Act, ISO/IEC 42001, NIST AI RMF).",
   "type": "module",
   "bin": {

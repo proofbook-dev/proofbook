@@ -10,6 +10,7 @@ import {
   sha256Hex,
   type ExtractQuery,
 } from "@proofbook/seal";
+import { liveSealed, openStore, pushArchive, PushError } from "@proofbook/store";
 import type { Log } from "../log.js";
 
 /**
@@ -33,6 +34,8 @@ export interface ArchiveOptions {
   trace?: string | undefined;
   bundle?: string | undefined;
   out?: string | undefined;
+  url?: string | undefined;
+  token?: string | undefined;
   log: Log;
 }
 
@@ -43,6 +46,9 @@ const USAGE = [
   "  proof archive verify <file.pba> --bundle <bundle-dir>",
   "  proof archive extract <file.pba> --trace <trace_id[:span_id]>[,...]",
   "                 [--key <keyfile>] [--bundle <bundle-dir>] [--out <file>]",
+  "  proof archive push [root|file.pba]            send to the hosted portal",
+  "                 (proof push sends it with the bundle by default; this is",
+  "                  the standalone verb for later uploads, retries, --no-archive)",
 ].join("\n");
 
 async function loadArchiveKey(cwd: string, keyPath: string | undefined, log: Log) {
@@ -153,6 +159,49 @@ export async function archiveCommand(opts: ArchiveOptions): Promise<number> {
         return 2;
       }
       return matches.length > 0 ? 0 : 3;
+    }
+
+    case "push": {
+      let root = opts.file;
+      let path: string;
+      if (root?.endsWith(".pba")) {
+        path = root;
+        root = root.split("/").at(-1)!.replace(/\.pba$/, "");
+      } else {
+        if (!root) {
+          const store = await openStore(join(cwd, ".proofbook", "store"));
+          root = liveSealed(store).at(-1)?.root;
+          if (!root) {
+            log("Nothing sealed yet; nothing to push.");
+            return 1;
+          }
+        }
+        path = join(cwd, ".proofbook", "store", "archives", `${root}.pba`);
+      }
+      let bytes: Buffer;
+      try {
+        bytes = await readFile(path);
+      } catch {
+        log(`No archive at ${path}. Seal with --archive to produce one.`);
+        return 1;
+      }
+      const { header } = readArchiveHeader(bytes);
+      try {
+        await pushArchive(
+          bytes,
+          { root, key_id: header.key_id, digest: sha256Hex(bytes) },
+          { url: opts.url, token: opts.token },
+        );
+      } catch (err) {
+        if (err instanceof PushError) {
+          log(err.message);
+          return 1;
+        }
+        throw err;
+      }
+      log(`archive pushed for root ${root.slice(0, 16)}… (${(bytes.length / 1_000_000).toFixed(1)} MB, key ${header.key_id}).`);
+      log("Proofbook stores the ciphertext and cannot open it.");
+      return 0;
     }
 
     default:

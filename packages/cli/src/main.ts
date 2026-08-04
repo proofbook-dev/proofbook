@@ -171,7 +171,14 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         log,
       });
     case "push":
-      return pushCommand({ cwd, dir: positional[0], url: flags.url, token: flags.token, log });
+      return pushCommand({
+        cwd,
+        dir: positional[0],
+        url: flags.url,
+        token: flags.token,
+        noArchive: "no-archive" in flags,
+        log,
+      });
     case "verify": {
       const dir = positional[0];
       if (!dir) {
@@ -206,6 +213,8 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         trace: flags.trace,
         bundle: flags.bundle,
         out: flags.out,
+        url: flags.url,
+        token: flags.token,
         log,
       });
     case "doctor":

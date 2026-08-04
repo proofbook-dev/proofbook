@@ -13,6 +13,8 @@ export interface PushCmdOptions {
   dir?: string | undefined;
   url?: string | undefined;
   token?: string | undefined;
+  /** Send only the bundle even when its manifest references an archive. */
+  noArchive?: boolean | undefined;
   log: Log;
   fetchImpl?: typeof fetch | undefined;
 }
@@ -63,7 +65,10 @@ export async function pushCommand(opts: PushCmdOptions): Promise<number> {
     const manifestMeta = JSON.parse(manifest) as {
       archive?: { digest: string; key_id: string; bytes: number };
     };
-    if (manifestMeta.archive) {
+    if (manifestMeta.archive && opts.noArchive) {
+      log("archive: held back (--no-archive). Send it later with: proof archive push");
+    }
+    if (manifestMeta.archive && !opts.noArchive) {
       const archivePath = join(opts.cwd, ".proofbook", "store", "archives", `${root}.pba`);
       try {
         const bytes = await readFile(archivePath);
