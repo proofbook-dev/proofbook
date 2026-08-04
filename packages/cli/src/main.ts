@@ -82,6 +82,10 @@ function parseArgs(argv: string[]): Parsed {
 }
 
 export async function main(argv: string[], cwd: string): Promise<number> {
+  // "npx proofbook proof push" happens constantly because the docs say
+  // `proof push` and npx needs the package name. The intent is
+  // unambiguous: absorb the doubled binary name instead of failing.
+  if (argv[0] === "proof" || argv[0] === "proofbook") argv = argv.slice(1);
   const { command, positional, flags } = parseArgs(argv);
   const log = console.log;
   const config = await loadConfig(cwd);
