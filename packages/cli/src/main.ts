@@ -9,6 +9,7 @@ import { explainCommand } from "./commands/explain.js";
 import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { archiveCommand } from "./commands/archive.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { loadConfig } from "./config.js";
 import {
@@ -27,6 +28,8 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof ingest <traces...>      normalise traces into an event batch
   proof watch                   receive OTLP/HTTP JSON spans into ./traces/
   proof seal [traces...]        seal a period: --period 2026-07 | last-month
+                                --archive: encrypted event archive only your key opens
+  proof archive                 keygen · info · verify · extract (spot-checks, offline)
   proof chain                   the continuity report: periods, gaps, verification
   proof gate                    PR gate: fail when code stops emitting a control's evidence
   proof push [bundle-dir]       send a sealed bundle to the hosted chain
@@ -151,6 +154,8 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         period: flags.period,
         supersede: "supersede" in flags,
         sign: flags.sign,
+        archive: "archive" in flags,
+        archiveKey: flags["archive-key"],
         log,
       });
     }
@@ -192,6 +197,17 @@ export async function main(argv: string[], cwd: string): Promise<number> {
     }
     case "explain":
       return explainCommand(positional[0], log);
+    case "archive":
+      return archiveCommand({
+        cwd,
+        sub: positional[0],
+        file: positional[1],
+        key: flags.key,
+        trace: flags.trace,
+        bundle: flags.bundle,
+        out: flags.out,
+        log,
+      });
     case "doctor":
       return doctorCommand({ cwd, json: "json" in flags, log });
     case "mcp":

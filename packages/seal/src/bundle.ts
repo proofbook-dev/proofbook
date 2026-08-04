@@ -47,6 +47,19 @@ export interface BundleInput {
    * the same.
    */
   period?: { label?: string; from: string; to: string };
+  /**
+   * Summary of the encrypted event archive sealed alongside this
+   * bundle. Recording digest and key fingerprint here makes the
+   * archive tamper-evident and bundle-bound without the bundle ever
+   * containing, or Proofbook ever seeing, a decryptable byte.
+   */
+  archive?: {
+    digest: string;
+    bytes: number;
+    events: number;
+    key_id: string;
+    cipher: string;
+  } | null;
 }
 
 export interface UnsignedBundle {
@@ -146,6 +159,9 @@ export function buildBundle(input: BundleInput): UnsignedBundle {
     })),
     summaries: evaluations.map((ev) => ({ framework: ev.framework, ...ev.summary })),
     previous: input.previous_root ?? null,
+    // Only present when an archive was sealed: absent keys keep the
+    // roots of archiveless bundles identical across tool versions.
+    ...(input.archive ? { archive: input.archive } : {}),
     files: Object.fromEntries(
       [...files.entries()]
         .sort(([a], [b]) => (a < b ? -1 : 1))

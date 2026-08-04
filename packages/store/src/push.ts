@@ -59,3 +59,40 @@ export async function pushBundle(
   const body = (await res.json().catch(() => ({}))) as { id?: string };
   return { id: body.id ?? root, root };
 }
+
+/**
+ * Push the encrypted archive for an already-pushed root. The API hands
+ * back a signed storage URL and the ciphertext goes there directly,
+ * bypassing any API body-size limit. The server stores what it cannot
+ * read: the key never travels.
+ */
+export async function pushArchive(
+  bytes: Uint8Array,
+  meta: { root: string; key_id: string; digest: string },
+  opts: PushOptions = {},
+): Promise<void> {
+  const url = (opts.url ?? process.env.PROOFBOOK_URL ?? "https://api.proofbook.dev").replace(/\/$/, "");
+  const token = opts.token ?? process.env.PROOFBOOK_TOKEN;
+  if (!token) throw new PushError("No PROOFBOOK_TOKEN set.");
+  const doFetch = opts.fetchImpl ?? fetch;
+
+  const res = await doFetch(`${url}/v1/archives`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ root: meta.root, bytes: bytes.length, key_id: meta.key_id, digest: meta.digest }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new PushError(body.error ?? `Archive refused (${res.status}). The bundle push already succeeded.`);
+  }
+  const { upload_url } = (await res.json()) as { upload_url: string };
+
+  const put = await doFetch(upload_url, {
+    method: "PUT",
+    headers: { "content-type": "application/octet-stream", "x-upsert": "true" },
+    body: bytes,
+  });
+  if (!put.ok) {
+    throw new PushError(`Archive upload failed (${put.status}). The bundle push already succeeded; retry proof push.`);
+  }
+}

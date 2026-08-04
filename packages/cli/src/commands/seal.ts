@@ -5,11 +5,14 @@ import { loadCrosswalkDir } from "@proofbook/crosswalk";
 import { evaluateFramework } from "@proofbook/engine";
 import { refreshInstrumentationLock } from "./gate.js";
 import {
+  buildArchive,
   buildBundle,
   generateKeypair,
+  parseArchiveKey,
   readBundleDir,
   signBundle,
   writeBundle,
+  type ArchiveSummary,
   type SignedBundle,
   type UnsignedBundle,
 } from "@proofbook/seal";
@@ -49,8 +52,54 @@ export interface SealOptions {
   supersede?: boolean | undefined;
   /** "local" (default) or "oidc" for Sigstore keyless in CI. */
   sign?: string | undefined;
+  /** Seal an encrypted event archive alongside the bundle. */
+  archive?: boolean | undefined;
+  /** Path to the 32-byte archive key (default .proofbook/archive.key). */
+  archiveKey?: string | undefined;
   log: Log;
   now?: Date | undefined;
+}
+
+/**
+ * Build the encrypted archive when requested. The key never leaves
+ * this process; a missing key is an instruction, not a silent skip.
+ */
+async function maybeBuildArchive(
+  opts: SealOptions,
+  batch: Parameters<typeof buildArchive>[0],
+): Promise<{ summary: ArchiveSummary; bytes: Buffer } | null | "error"> {
+  if (!opts.archive) return null;
+  const keyPath = opts.archiveKey ?? join(opts.cwd, ".proofbook", "archive.key");
+  let keyText: string;
+  try {
+    keyText = await readFile(keyPath, "utf8");
+  } catch {
+    opts.log(`No archive key at ${keyPath}.`);
+    opts.log("Generate one first: proof archive keygen");
+    opts.log("The key stays with you; Proofbook cannot open archives, and losing the");
+    opts.log("key means losing them. Store it like a signing secret.");
+    return "error";
+  }
+  const built = buildArchive(batch, parseArchiveKey(keyText));
+  return built;
+}
+
+async function writeArchiveFile(
+  cwd: string,
+  root: string,
+  bytes: Buffer,
+  summary: ArchiveSummary,
+  log: Log,
+): Promise<void> {
+  const dir = join(cwd, ".proofbook", "store", "archives");
+  await mkdir(dir, { recursive: true });
+  const path = join(dir, `${root}.pba`);
+  await writeFile(path, bytes);
+  const mb = (summary.bytes / (1024 * 1024)).toFixed(summary.bytes > 10 * 1024 * 1024 ? 0 : 2);
+  log(`archive:  ${path}`);
+  log(`          ${summary.events.toLocaleString("en-US")} events · ${mb} MB · encrypted with key ${summary.key_id}`);
+  log("          Proofbook cannot open it. Losing the key loses the archive.");
+  log("          It stays local until `proof push`, which ships bundle and archive together.");
 }
 
 async function loadKey(cwd: string, log: Log): Promise<string> {
@@ -186,20 +235,28 @@ async function sealPeriod(opts: SealOptions, paths: string[]): Promise<number> {
     // Idempotency: same period + same content is a no-op; divergent
     // content is refused unless explicitly superseding. Never a second
     // silent divergent bundle for one period.
-    const existingPrevious = await (async () => {
+    const existingManifest = await (async () => {
       try {
         const files = await readBundleDir(plan.existing!.dir!);
-        return (JSON.parse(files.get("manifest.json")!) as { previous: string | null }).previous;
+        return JSON.parse(files.get("manifest.json")!) as {
+          previous: string | null;
+          archive?: ArchiveSummary;
+        };
       } catch {
         return null;
       }
     })();
+    const existingPrevious = existingManifest?.previous ?? null;
+    // Archive bytes are nondeterministic (fresh IVs); comparing content
+    // means comparing everything except the archive record, so reuse
+    // the existing one for the recomputation.
     const recomputed = buildBundle({
       batch,
       evaluations,
       subject,
       previous_root: existingPrevious,
       period,
+      ...(existingManifest?.archive ? { archive: existingManifest.archive } : {}),
     });
     if (recomputed.root === plan.existing!.root) {
       log(
@@ -219,12 +276,15 @@ async function sealPeriod(opts: SealOptions, paths: string[]): Promise<number> {
     // The superseding bundle takes the old one's slot in the live
     // chain, so it inherits the old bundle's predecessor; the ledger's
     // superseded_by field records the replacement relationship.
+    const supersedeArchive = await maybeBuildArchive(opts, batch);
+    if (supersedeArchive === "error") return 1;
     const superseding = buildBundle({
       batch,
       evaluations,
       subject,
       previous_root: existingPrevious,
       period,
+      ...(supersedeArchive ? { archive: supersedeArchive.summary } : {}),
     });
     const { signed, attestation } = await signAndAttest(opts, superseding, log);
     const generation = store.chain.entries.filter((e) => e.label === period.label).length;
@@ -233,6 +293,9 @@ async function sealPeriod(opts: SealOptions, paths: string[]): Promise<number> {
     recordSupersession(store, period.label, signed.root);
     recordSeal(store, period, signed.root, dir, new Date().toISOString());
     await saveStore(store);
+    if (supersedeArchive) {
+      await writeArchiveFile(cwd, signed.root, supersedeArchive.bytes, supersedeArchive.summary, log);
+    }
     log(summaryLine(evaluations));
     log("");
     log(`superseded ${period.label}: the old root stays in the chain, marked superseded.`);
@@ -265,12 +328,15 @@ async function sealPeriod(opts: SealOptions, paths: string[]): Promise<number> {
     log("");
   }
 
+  const archived = await maybeBuildArchive(opts, batch);
+  if (archived === "error") return 1;
   const unsigned = buildBundle({
     batch,
     evaluations,
     subject,
     previous_root: plan.previous,
     period,
+    ...(archived ? { archive: archived.summary } : {}),
   });
   const { signed, attestation } = await signAndAttest(opts, unsigned, log);
   const dir = opts.out ?? bundleDir(store, period.label);
@@ -279,6 +345,9 @@ async function sealPeriod(opts: SealOptions, paths: string[]): Promise<number> {
     backfill: plan.backfill,
   });
   await saveStore(store);
+  if (archived) {
+    await writeArchiveFile(cwd, signed.root, archived.bytes, archived.summary, log);
+  }
 
   log(summaryLine(evaluations));
   log("");
@@ -331,11 +400,14 @@ async function sealAdhoc(opts: SealOptions, paths: string[]): Promise<number> {
   }
   const previous = opts.previous ?? chain.at(-1)?.root ?? null;
 
+  const adhocArchive = await maybeBuildArchive(opts, result.batch);
+  if (adhocArchive === "error") return 1;
   const unsigned = buildBundle({
     batch: result.batch,
     evaluations: result.evaluations,
     subject: opts.subject ?? defaultSubject(cwd),
     previous_root: previous,
+    ...(adhocArchive ? { archive: adhocArchive.summary } : {}),
   });
   const { signed, attestation } = await signAndAttest(opts, unsigned, log);
 
@@ -351,6 +423,9 @@ async function sealAdhoc(opts: SealOptions, paths: string[]): Promise<number> {
   chain.push({ root: signed.root, dir: dirName, period });
   await mkdir(join(cwd, ".proofbook"), { recursive: true });
   await writeFile(chainPath, JSON.stringify(chain, null, 2));
+  if (adhocArchive) {
+    await writeArchiveFile(cwd, signed.root, adhocArchive.bytes, adhocArchive.summary, log);
+  }
 
   log(summaryLine(result.evaluations));
   log("");

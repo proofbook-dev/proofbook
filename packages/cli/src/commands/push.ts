@@ -1,6 +1,7 @@
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readBundleDir } from "@proofbook/seal";
-import { liveSealed, openStore, pushBundle, PushError } from "@proofbook/store";
+import { liveSealed, openStore, pushArchive, pushBundle, PushError } from "@proofbook/store";
 import type { Log } from "../log.js";
 
 /**
@@ -56,6 +57,28 @@ export async function pushCommand(opts: PushCmdOptions): Promise<number> {
     });
     log(`pushed ${label} (${(size / 1_000_000).toFixed(1)} MB, ${files.size} files) · root ${result.root.slice(0, 16)}…`);
     log("Only the bundle crossed: verdicts, digests, signatures. No traces, no content.");
+
+    // A bundle sealed with --archive references its ciphertext; ship it
+    // too when the file is here. The portal stores what it cannot read.
+    const manifestMeta = JSON.parse(manifest) as {
+      archive?: { digest: string; key_id: string; bytes: number };
+    };
+    if (manifestMeta.archive) {
+      const archivePath = join(opts.cwd, ".proofbook", "store", "archives", `${root}.pba`);
+      try {
+        const bytes = await readFile(archivePath);
+        await pushArchive(bytes, { root, key_id: manifestMeta.archive.key_id, digest: manifestMeta.archive.digest }, {
+          url: opts.url,
+          token: opts.token,
+          fetchImpl: opts.fetchImpl,
+        });
+        log(`archive pushed (${(bytes.length / 1_000_000).toFixed(1)} MB, encrypted with key ${manifestMeta.archive.key_id}).`);
+        log("Proofbook stores the ciphertext and cannot open it; extraction needs your key.");
+      } catch (err) {
+        if (err instanceof PushError) log(`archive: ${err.message}`);
+        else log(`archive: not pushed (${(err as Error).message}); the bundle push succeeded.`);
+      }
+    }
     return 0;
   } catch (err) {
     if (err instanceof PushError) {

@@ -233,7 +233,7 @@ export async function mcpCommand(opts: {
             result: {
               protocolVersion: (msg.params?.protocolVersion as string) ?? "2025-06-18",
               capabilities: { tools: {} },
-              serverInfo: { name: "proofbook", version: "0.1.3" },
+              serverInfo: { name: "proofbook", version: "0.1.4" },
               instructions:
                 "Read-only evidence tools for this repository's agent telemetry. " +
                 "Start with get_coverage_gaps; each gap includes the instrumentation that closes it.",
