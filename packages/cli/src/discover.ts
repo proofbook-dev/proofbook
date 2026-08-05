@@ -1,4 +1,4 @@
-import { open, readdir } from "node:fs/promises";
+import { open, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
@@ -40,15 +40,58 @@ async function candidatesIn(dir: string): Promise<string[]> {
   }
 }
 
+/** Immediate subdirectory names of a directory (for traces/<source>/). */
+async function subdirsOf(dir: string): Promise<string[]> {
+  try {
+    return (await readdir(dir, { withFileTypes: true }))
+      .filter((e) => e.isDirectory() && !SKIP.has(e.name))
+      .map((e) => join(dir, e.name));
+  } catch {
+    return [];
+  }
+}
+
 export async function discoverTraces(cwd: string): Promise<string[]> {
   const candidates = [...(await candidatesIn(cwd))];
   for (const sub of SUBDIRS) {
     if (SKIP.has(sub)) continue;
-    candidates.push(...(await candidatesIn(join(cwd, sub))));
+    const dir = join(cwd, sub);
+    candidates.push(...(await candidatesIn(dir)));
+    // One level deeper: `proof pull` writes to traces/<source>/.
+    for (const nested of await subdirsOf(dir)) {
+      candidates.push(...(await candidatesIn(nested)));
+    }
   }
   const found: string[] = [];
   for (const path of candidates.sort()) {
     if (await probeIsOtlp(path)) found.push(path);
   }
   return found;
+}
+
+/**
+ * Expand explicit path arguments: a file stays as-is, a directory
+ * becomes the trace files inside it (and one level of subdirectories),
+ * so `proof report traces/datadog` works instead of failing on EISDIR.
+ */
+export async function expandTracePaths(paths: string[]): Promise<string[]> {
+  const out: string[] = [];
+  for (const path of paths) {
+    let isDir = false;
+    try {
+      isDir = (await stat(path)).isDirectory();
+    } catch {
+      out.push(path);
+      continue;
+    }
+    if (!isDir) {
+      out.push(path);
+      continue;
+    }
+    out.push(...(await candidatesIn(path)));
+    for (const nested of await subdirsOf(path)) {
+      out.push(...(await candidatesIn(nested)));
+    }
+  }
+  return out;
 }

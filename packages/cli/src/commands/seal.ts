@@ -35,7 +35,7 @@ import {
   resolvePeriod,
   saveStore,
 } from "@proofbook/store";
-import { discoverTraces } from "../discover.js";
+import { discoverTraces, expandTracePaths } from "../discover.js";
 import { defaultSubject, runPipeline, summaryLine } from "../pipeline.js";
 import type { Log } from "../log.js";
 
@@ -178,6 +178,8 @@ export async function sealCommand(opts: SealOptions): Promise<number> {
       log("No trace files found to seal. Run `proof report` first to see what I can see.");
       return 1;
     }
+  } else {
+    paths = await expandTracePaths(paths);
   }
 
   return opts.period !== undefined ? sealPeriod(opts, paths) : sealAdhoc(opts, paths);

@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import { NormalizeError } from "@proofbook/normalize";
 import { isLang, LANGS, renderReport } from "@proofbook/report";
 import { loadControlTranslations } from "@proofbook/crosswalk";
-import { discoverTraces } from "../discover.js";
+import { discoverTraces, expandTracePaths } from "../discover.js";
 import { defaultSubject, runPipeline, summaryLine } from "../pipeline.js";
 import { capabilityImpacts, coverageBlock, discoveryBlock, gapParagraph } from "../transcript.js";
 import type { Log } from "../log.js";
@@ -53,6 +53,9 @@ export async function reportCommand(opts: ReportOptions): Promise<number> {
     log(`Found ${paths.length} trace file(s):`);
     for (const p of paths) log(`  ${relative(cwd, p) || p}`);
     log("");
+  } else {
+    // Explicit paths may name directories (e.g. a proof pull output dir).
+    paths = await expandTracePaths(paths);
   }
 
   const langInput = opts.lang ?? "en";

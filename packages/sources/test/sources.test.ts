@@ -83,7 +83,7 @@ describe("datadog", () => {
       });
     });
     const files = await datadog.fetch({
-      ...ctx({ DD_API_KEY: "k", DD_APP_KEY: "a", DD_SITE: "x" }),
+      ...ctx({ DD_API_KEY: "k", DD_APP_KEY: "a", DD_SITE: "x", DD_SPANS: "apm" }),
       fetchImpl: ((input: string, init?: RequestInit) =>
         fetch(url + new URL(input).pathname, init)) as typeof fetch,
     });
@@ -93,6 +93,51 @@ describe("datadog", () => {
     expect(spans).toHaveLength(1);
     expect(spans[0]!.attrs["gen_ai.system"]).toBe("anthropic");
     expect(spans[0]!.attrs["gen_ai.request.model"]).toBe("claude-sonnet-5");
+  });
+
+  it("default: reads LLM Observability spans and maps kinds to gen_ai.*", async () => {
+    const paths: string[] = [];
+    const url = await serve((req, res) => {
+      let body = "";
+      req.on("data", (c) => (body += c));
+      req.on("end", () => {
+        paths.push(req.url ?? "");
+        const cursor = (JSON.parse(body) as { data: { attributes: { page: { cursor?: string } } } })
+          .data.attributes.page.cursor;
+        res.setHeader("content-type", "application/json");
+        res.end(
+          JSON.stringify(
+            cursor
+              ? { data: [], meta: {} }
+              : {
+                  data: [
+                    { id: "1", attributes: { trace_id: "t1", span_id: "s-agent", name: "claims-intake", span_kind: "agent", status: "ok", start_ns: 1785935465000000000, duration: 5000000, metadata: { agent_id: "claims-intake", session_id: "sess-1" }, tags: ["service:agents"] } },
+                    { id: "2", attributes: { trace_id: "t1", span_id: "s-llm", parent_id: "s-agent", name: "chat", span_kind: "llm", status: "ok", start_ns: 1785935465100000000, duration: 6000000, model_name: "claude-sonnet-5", model_provider: "anthropic", metrics: { input_tokens: 400, output_tokens: 120 }, input: { value: "hi" }, output: { value: "hello" }, tags: [] } },
+                    { id: "3", attributes: { trace_id: "t1", span_id: "s-tool", parent_id: "s-agent", name: "lookup_policy", span_kind: "tool", status: "error", start_ns: 1785935465200000000, duration: 3000000, input: { value: "{}" }, output: { value: "503" }, tags: ["outcome:error"] } },
+                    { id: "4", attributes: { trace_id: "t1", span_id: "s-task", parent_id: "s-agent", name: "human_approval", span_kind: "task", status: "ok", start_ns: 1785935465300000000, duration: 1000000, metadata: { checkpoint_type: "approval", decision: "approved", actor: "reviewer-2" }, tags: ["human_checkpoint:true"] } },
+                  ],
+                  meta: { page: { after: "n1" } },
+                },
+          ),
+        );
+      });
+    });
+    const files = await datadog.fetch({
+      ...ctx({ DD_API_KEY: "k", DD_APP_KEY: "a", DD_SITE: "x" }),
+      fetchImpl: ((input: string, init?: RequestInit) =>
+        fetch(url + new URL(input).pathname, init)) as typeof fetch,
+    });
+    expect(paths[0]).toBe("/api/v2/llm-obs/v1/spans/events/search");
+    const spans = allSpans(files);
+    const byOp = (op: string) => spans.find((s) => s.attrs["gen_ai.operation.name"] === op);
+    expect(byOp("invoke_agent")!.attrs["gen_ai.agent.id"]).toBe("claims-intake");
+    expect(byOp("chat")!.attrs["gen_ai.usage.input_tokens"]).toBe(400);
+    expect(byOp("chat")!.attrs["gen_ai.request.model"]).toBe("claude-sonnet-5");
+    expect(byOp("execute_tool")!.attrs["gen_ai.tool.name"]).toBe("lookup_policy");
+    const checkpoint = spans.find((s) => s.attrs["proofbook.human_checkpoint.type"]);
+    expect(checkpoint!.attrs["proofbook.human_checkpoint.decision"]).toBe("approved");
+    // The errored tool span carries an OTLP error status.
+    expect(spans.find((s) => s.attrs["gen_ai.tool.name"] === "lookup_policy")!.statusCode).toBe("ERROR");
   });
 });
 
