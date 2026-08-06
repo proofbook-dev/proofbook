@@ -60,7 +60,8 @@ proof watch         local OTLP/HTTP receiver for development
 proof seal          seal a period into a signed, chained bundle
 proof chain         continuity report: periods, gaps, verification
 proof push          send a sealed bundle to the hosted chain
-proof delete        remove a subject's evidence set from the hosted chain (--yes)
+proof list          list evidence sets on the hosted chain (subject, periods, root)
+proof delete        remove an evidence set from the hosted chain: root prefix or --subject (--yes)
 proof verify        verify any bundle offline, check by check
 proof gate          PR gate: fail when code stops emitting a control's evidence
 proof answer        draft questionnaire answers from evidence

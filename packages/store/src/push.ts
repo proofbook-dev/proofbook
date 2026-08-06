@@ -150,3 +150,37 @@ export async function deleteEvidence(subject: string, opts: PushOptions = {}): P
     shares: body.shares ?? 0,
   };
 }
+
+export interface EvidenceSet {
+  subject: string;
+  bundles: number;
+  live: number;
+  periods: string[];
+  latest_period: string | null;
+  latest_root: string;
+}
+
+/**
+ * List the evidence sets on the hosted chain for this org (grouped by
+ * subject), so a developer can see what exists before deleting. Read-only.
+ */
+export async function listEvidence(opts: PushOptions = {}): Promise<EvidenceSet[]> {
+  const url = (opts.url ?? process.env.PROOFBOOK_URL ?? "https://api.proofbook.dev").replace(/\/$/, "");
+  const token = opts.token ?? process.env.PROOFBOOK_TOKEN;
+  if (!token) {
+    throw new PushError("No PROOFBOOK_TOKEN set. Listing reads the hosted chain; set the org token first.");
+  }
+  const doFetch = opts.fetchImpl ?? fetch;
+
+  let res: Response;
+  try {
+    res = await doFetch(`${url}/v1/bundles`, { headers: { authorization: `Bearer ${token}` } });
+  } catch (err) {
+    throw new PushError(`Could not reach ${url}: ${(err as Error).message}.`);
+  }
+  const body = (await res.json().catch(() => ({}))) as { sets?: EvidenceSet[]; error?: string };
+  if (!res.ok) {
+    throw new PushError(body.error ?? `List rejected (${res.status}).`);
+  }
+  return body.sets ?? [];
+}

@@ -13,4 +13,5 @@ export * from "./commands/explain.js";
 export * from "./commands/doctor.js";
 export * from "./commands/mcp.js";
 export * from "./commands/archive.js";
+export * from "./commands/list.js";
 export * from "./commands/delete.js";

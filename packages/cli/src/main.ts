@@ -10,6 +10,7 @@ import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { archiveCommand } from "./commands/archive.js";
+import { listCommand } from "./commands/list.js";
 import { deleteCommand } from "./commands/delete.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { loadConfig } from "./config.js";
@@ -35,8 +36,9 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof chain                   the continuity report: periods, gaps, verification
   proof gate                    PR gate: fail when code stops emitting a control's evidence
   proof push [bundle-dir]       send a sealed bundle to the hosted chain
-  proof delete                  remove a subject's evidence set from the hosted chain
-                                (--subject <name> --yes: bundles, sign-offs, archives, shares)
+  proof list                    list evidence sets on the hosted chain (subject, periods, root)
+  proof delete [root-prefix]    remove an evidence set from the hosted chain (--yes)
+                                target by root prefix or --subject <name>; run proof list first
   proofbook verify <bundle-dir>     verify a bundle offline, check by check
   proof answer <questions.csv>  draft questionnaire answers from evidence
   proof crosswalk list          list frameworks and controls
@@ -189,9 +191,15 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         noArchive: "no-archive" in flags,
         log,
       });
+    case "list":
+    case "ls":
+      return listCommand({ url: flags.url, token: flags.token, log });
     case "delete":
+      // Explicit --subject only: never fall back to the config subject, so a
+      // stray `proof delete --yes` cannot wipe the configured project.
       return deleteCommand({
-        subject,
+        subject: flags.subject,
+        ref: flags.root ?? positional[0],
         url: flags.url,
         token: flags.token,
         yes: "yes" in flags,
