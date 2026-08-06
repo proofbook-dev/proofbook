@@ -10,6 +10,7 @@ import { pushCommand } from "./commands/push.js";
 import { initCommand } from "./commands/init.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { archiveCommand } from "./commands/archive.js";
+import { deleteCommand } from "./commands/delete.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { loadConfig } from "./config.js";
 import {
@@ -34,6 +35,8 @@ const HELP = `proofbook · evidence layer for agentic AI systems
   proof chain                   the continuity report: periods, gaps, verification
   proof gate                    PR gate: fail when code stops emitting a control's evidence
   proof push [bundle-dir]       send a sealed bundle to the hosted chain
+  proof delete                  remove a subject's evidence set from the hosted chain
+                                (--subject <name> --yes: bundles, sign-offs, archives, shares)
   proofbook verify <bundle-dir>     verify a bundle offline, check by check
   proof answer <questions.csv>  draft questionnaire answers from evidence
   proof crosswalk list          list frameworks and controls
@@ -184,6 +187,14 @@ export async function main(argv: string[], cwd: string): Promise<number> {
         url: flags.url,
         token: flags.token,
         noArchive: "no-archive" in flags,
+        log,
+      });
+    case "delete":
+      return deleteCommand({
+        subject,
+        url: flags.url,
+        token: flags.token,
+        yes: "yes" in flags,
         log,
       });
     case "verify": {

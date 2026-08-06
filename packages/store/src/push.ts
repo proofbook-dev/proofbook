@@ -102,3 +102,51 @@ export async function pushArchive(
     throw new PushError(`Archive upload failed (${put.status}). The bundle push already succeeded; retry proof push.`);
   }
 }
+
+export interface DeleteResult {
+  subject: string;
+  bundles: number;
+  attestations: number;
+  archives: number;
+  shares: number;
+}
+
+/**
+ * Delete a subject's whole evidence set from the hosted chain: every
+ * sealed period and re-seal, its declared sign-offs, encrypted archives
+ * and any share link left covering nothing. Irreversible on the server.
+ * Local bundles, traces and keys are never touched: this speaks only to
+ * the hosted API, and only about what was pushed there.
+ */
+export async function deleteEvidence(subject: string, opts: PushOptions = {}): Promise<DeleteResult> {
+  const url = (opts.url ?? process.env.PROOFBOOK_URL ?? "https://api.proofbook.dev").replace(/\/$/, "");
+  const token = opts.token ?? process.env.PROOFBOOK_TOKEN;
+  if (!token) {
+    throw new PushError(
+      "No PROOFBOOK_TOKEN set. Deleting affects the hosted chain (portal history, share " +
+        "links); set the org token before deleting.",
+    );
+  }
+  const doFetch = opts.fetchImpl ?? fetch;
+
+  let res: Response;
+  try {
+    res = await doFetch(`${url}/v1/bundles?subject=${encodeURIComponent(subject)}`, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${token}` },
+    });
+  } catch (err) {
+    throw new PushError(`Could not reach ${url}: ${(err as Error).message}. Nothing was deleted.`);
+  }
+  const body = (await res.json().catch(() => ({}))) as Partial<DeleteResult> & { error?: string };
+  if (!res.ok) {
+    throw new PushError(body.error ?? `Delete rejected (${res.status}). Nothing was deleted.`);
+  }
+  return {
+    subject,
+    bundles: body.bundles ?? 0,
+    attestations: body.attestations ?? 0,
+    archives: body.archives ?? 0,
+    shares: body.shares ?? 0,
+  };
+}
